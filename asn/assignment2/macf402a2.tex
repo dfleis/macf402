@@ -1,0 +1,750 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,dsfont}
+\usepackage{enumerate} 
+\usepackage{float}
+
+\newenvironment{proposition}[2][Proposition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+%%======%%
+% All this is to force LaTeX to prefix "Appendix" before a new appendix section letter
+\makeatletter
+% The "\@seccntformat" command is an auxiliary command
+% (see pp. 26f. of 'The LaTeX Companion,' 2nd. ed.)
+\def\@seccntformat#1{\@ifundefined{#1@cntformat}%
+   {\csname the#1\endcsname\quad}  % default
+   {\csname #1@cntformat\endcsname}% enable individual control
+}
+\let\oldappendix\appendix %% save current definition of \appendix
+\renewcommand\appendix{%
+    \oldappendix
+    \newcommand{\section@cntformat}{\appendixname~\thesection\quad}
+}
+\makeatother
+%%======%%
+
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Assignment 2}
+\author{David Fleischer -- 27101449\\ 
+MACF 402 - Mathematical \& Computational Finance II}
+ 
+\maketitle
+
+%=========Problem 1===========%
+{\bf Problem 1}. Consider a simple process $H$ associated with a partition $\{0 = t_0 < t_1 < \cdots < t_n = T \}$ such that $H_t = H_{t_i}$ for $t \in [t_i, t_{i+1})$ and $H_{t_i}$ is $\mathcal F_{t_i}$-measurable. Prove that the stochastic integral with respect to a standard Brownian motion $B$ defined as
+\begin{equation*}
+	I(T) := \int^T_0 H_u\,dB_u = \sum^{n-1}_{i = 0}H_{t_i}\big(B_{t_{i+1}} - B_{t_i} \big)
+\end{equation*}
+
+satisfies $\mathbb E[I(T)] = 0$. \\
+
+%=========Solution 1===========%
+{\bf Solution 1}.
+\begin{proof}
+The first thing we must do is convince ourselves that everything we have is in fact $\mathcal F_t$-measurable. From the definition of a filtration we have
+\begin{equation*}
+	\mathcal F_0 = \mathcal F_{t_0} \subseteq \mathcal F_{t_1} \subseteq \cdots \mathcal F_{t_i} \subseteq \cdots \quad\text{for } 0 = t_0 < t_1 < \cdots < t_i \cdots 
+\end{equation*}
+
+thus, we see that
+\begin{align*}
+	H_{t_i} \in \mathcal F_{t_i} \subseteq \mathcal F_{t}& \quad \text{for $t \in [t_i,t_{i+1})$, and} \\
+	\big(B_{t_{i+1}} - B_{t_i}\big)& \quad \text{is independent of $\mathcal F$}
+\end{align*}
+
+So,
+\begin{align*}
+	\mathbb E[I(T)] &= \mathbb E\Big[\sum^{n-1}_{i=0} H_{t_i}\big(B_{t_{i+1}} - B_{t_i}\big)\Big] \\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[H_{t_i}\big(B_{t_{i+1}} - B_{t_i}\big)\Big] \quad \text{(by linearity of expectation)}\\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[\mathbb E\big[ H_{t_i}\big(B_{t_{i+1}} - B_{t_i}\big)| \mathcal F_{t} \big]\Big] \quad \text{(by the tower property)} \\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[H_{t_i} \cdot \mathbb E\big[B_{t_{i+1}} - B_{t_i}| \mathcal F_{t} \big]\Big] \quad \text{(since $H_{t_i}$ is $\mathcal F_t$-measurable)} \\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[H_{t_i} \cdot 0\Big] = 0 
+\end{align*}
+
+\indent Where the final step was achieved by realizing that Brownian motion is defined to have independent increments with mean zero. Thus we conclude with the result
+\begin{equation*}
+	\mathbb E[I(T)] = \mathbb E\Bigg(\int^T_0 H_u\,dB_u\Bigg) = \mathbb E\Bigg(\sum^{n-1}_{i = 0}H_{t_i}\big(B_{t_{i+1}} - B_{t_i} \big)\Bigg) = 0
+\end{equation*}
+
+as desired.
+\end{proof}
+\hfill\newline 
+
+%=========Problem 2===========%
+{\bf Problem 2}. Suppose that on a risk-neutral filtered probability space $(\Omega,\mathcal F,\{\mathcal F_t\},\mathbb Q)$ the price of a risky asset at time $t$ is given by the stochastic differential equation
+\begin{equation*}
+	S_t = S_0 + \int^t_0 rS_u\,du + \int^t_0 \sigma S_u\,dW_u
+\end{equation*}
+
+for $0 \leq t \leq T$. Use It\^{o}'s formula to give a stochastic differential equation satisfied by $\ln (S_t)$. \\
+
+%=========Solution 2===========%
+{\bf Solution 2}. Since we are looking for the SDE satisfied by $\ln(S_t)$ we will consider $f(x) = \ln x$. We quickly compute our derivatives for use in It\^{o}'s formula,
+\begin{equation*}
+	f_x(x) = \frac{1}{x} \quad f_{xx}(x) = -\frac{1}{x^2}
+\end{equation*}
+
+and from It\^{o}'s formula we have
+\begin{equation*}
+	f(x) = f(0) + \int^t_0 \frac{1}{x} \,dx - \frac{1}{2}\int^t_0 \frac{1}{x^2} \,d\langle x\rangle
+\end{equation*}
+
+Evaluating $x$ at $S_t$ gives us
+\begin{equation*}
+	\ln(S_t) = \ln(S_0) + \int^t_0 \frac{1}{S_u} \,dS_u - \frac{1}{2}\int^t_0 \frac{1}{S_u^2} \,d\langle S_{(\cdot)}\rangle_u
+\end{equation*}
+
+In differential form our SDE for $S_t$ is 
+\begin{equation*}
+	dS_t = rS_t\,dt + \sigma S_t\,dW_t
+\end{equation*}
+
+\indent For an It\^{o} process $Y_t = Y_0 + \int^t_0 H \,du + \int^t_0 K \,dB_u$ the quadratic variation of the process can be simplified as
+\begin{equation*}
+ \langle Y_{(\cdot)} \rangle_t = \Big\langle Y_0 + \int^{(\cdot)}_0 H \,du + \int^{(\cdot)}_0 K \,dB_{(\cdot)} \Big\rangle_t = \int^t_0 K^2\,d\langle B_{(\cdot)}\rangle_u = \int^t_0 K^2 \,du
+\end{equation*}
+
+Thus,
+\begin{equation*}
+	\,d\langle S_{(\cdot)}\rangle_t = (\sigma S_t)^2\,d\langle W_{(\cdot)}\rangle_t = \sigma^2S_t^2\,dt
+\end{equation*}
+
+With this we may continue to hack away at our SDE for $\ln(S_t)$,
+\begin{align*}
+	\ln(S_t) &= \ln(S_0) + \int^t_0 \frac{1}{S_u} \,dS_u - \frac{1}{2}\int^t_0 \frac{1}{S_u^2} \,d\langle S_{(\cdot)}\rangle_u \\
+	&= \ln(S_0) + \int^t_0 \frac{1}{S_u} \big[rS_u\,du + \sigma S_u\,dW_u \big] - \frac{1}{2}\int^t_0 \frac{1}{S_u^2} \sigma^2 S_u^2\,du \\
+	&= \ln(S_0) + \int^t_0 \big[r\,du + \sigma\,dW_u \big] - \frac{1}{2}\int^t_0 \sigma^2\,du \\
+	&= \ln(S_0) + \int^t_0 \big[r - \frac{1}{2}\sigma^2\big] \,du + \int^t_0 \sigma\,dW_u
+\end{align*}
+
+or in differential form
+\begin{align*}
+	d\ln(S_t) = \big[r - \frac{1}{2}\sigma^2\big]\,dt + \sigma\,dW_t
+\end{align*}
+
+with initial condition $\ln(S_0)$, and so our task is now complete. \\
+
+%=========Problem 3===========%
+{\bf Problem 3}. Let $W_t$ be a standard Brownian motion. Use It\^{o}'s formula to prove the following: \\
+
+%=========Problem 3(a)===========%
+{\bf Problem 3 (a)}. 
+For a (deterministic) function $h(t)$ with continuous derivative on $[0,\infty)$:
+\begin{equation*}
+	\int^t_0 h(s)\,dW_s = h(t)W_t - \int^t_0 h'(s)W_s\,ds
+\end{equation*} \\
+
+%=========Solution 3(a)===========%
+{\bf Solution 3 (a).}
+\begin{proof} If we rearrange our equation so that we have
+\begin{equation*}
+	h(t)W_t = \int^t_0 h(s)\,dW_s + \int^t_0 h'(s)W_s\,ds
+\end{equation*}	
+	
+\indent We see that we now have a natural function $f(t,x)$ for use in It\^{o}'s formula, namely, $f(t,x) = h(t)x$. We compute our derivatives
+\begin{equation*}
+	f_t(t,x) = h'(t)x \quad f_x(t,x) = h(t) \quad f_{xx}(t,x) = 0
+\end{equation*}
+
+and apply It\^{o}'s formula
+\begin{align*}
+	f(t,x) &= f(0,0) + \int^t_0 f_s(s,x)\,ds + \int^t_0 f_x(s,x)\,dx + \frac{1}{2}\int^t_0 f_{xx}(t,x)\,d\langle x\rangle \\
+	&= f(0,0)  + \int^t_0 h'(s)x\,ds + \int^t_0 h(s)\,dx + \frac{1}{2}\int^t_0(0)\,d\langle x\rangle \\
+	&= f(0,0)  + \int^t_0 h'(s)x\,ds + \int^t_0 h(s)\,dx 
+\end{align*}	
+	
+Evaluating $x$ at $W_t$ we get
+\begin{align*}
+	h(t)W_t &= h(0)W_0 + \int^t_0 h'(s)W_s\,ds + \int^t_0 h(s)\,dW_s \\
+			&= \int^t_0 h'(s)W_s\,ds + \int^t_0 h(s)\,dW_s
+\end{align*}	
+	
+\indent We see that this is correct, but for completeness we arrange our equation to obtain
+\begin{equation*}
+	\int^t_0 h(s)\,dW_s = h(t)W_t - \int^t_0 h(s)W_s\,ds
+\end{equation*}
+	
+as desired.
+\end{proof}
+\hfill\newline
+
+%=========Problem 3(b)===========%
+{\bf Problem 3 (b)}. 
+\begin{equation*}
+	Z_t = \exp\Bigg(\int^t_0 \theta(s)\,ds - \frac{1}{2}\int^t_0 \theta(s)^2\,dW_s\Bigg)
+\end{equation*}
+
+satisfies
+\begin{equation*}
+	dZ_t = \theta(t)Z_t\,dW_t
+\end{equation*}	\\
+
+%=========Solution 3(b)===========%
+{\bf Solution 3 (b).}
+\begin{proof} Letting $M_t = \int^t_0 \theta(s)\,dW_s - \frac{1}{2}\int^t_0 \theta(s)^2\,ds$ we see that $Z_t = e^{M_t}$ is now formulated as a SDE for $M_t$. With $f(t,x) = e^x$, thus $\frac{\partial}{\partial t} f(t,x) = 0$ and $\frac{\partial^n}{\partial x^n} f(t,x) = e^x$, we use It\^{o}'s formula
+\begin{align*}
+	f(t,x) &= f(0,0) + \int^t_0 e^x \,dx + \frac{1}{2}\int^t_0 e^x\,d\langle x\rangle \\
+	\implies Z_t &= Z_0 + \int^t_0 e^{M_u}\,dM_u + \frac{1}{2}\int^t_0 e^{M_u}\,d\langle M_{(\cdot)}\rangle_u \\
+	&= 1 + \int^t_0 Z_u\,dM_u + \frac{1}{2}\int^t_0 Z_u\,d\langle M_{(\cdot)}\rangle_u
+\end{align*}
+	
+Computing our differential terms
+\begin{align*}
+	dM_t &= \theta(t)\,dW_t - \frac{1}{2}\theta(t)^2\,dt \\
+	\langle M_{(\cdot)}\rangle_t &= \Big\langle \int^{(\cdot)}_0 \theta(u)\,dW_u - \frac{1}{2}\int^{(\cdot)}_0 \theta(u)^2\,du \Big\rangle_t = \int^t_0 \theta(u)^2\,d\langle W_{(\cdot)} \rangle_t = \int^t_0 \theta(u)^2\,du \\
+	\implies d\langle M_{(\cdot)} \rangle_t &= \theta(t)^2\,dt
+\end{align*}
+	
+so
+\begin{align*}
+	Z_t &= 1 + \int^t_0 Z_u\,dM_u + \frac{1}{2}\int^t_0 Z_u\,d\langle M_{(\cdot)}\rangle_u \\
+	&= 1 + \int^t_0 Z_u\bigg[\theta(u)\,dW_u - \frac{1}{2}\theta(t)^2\,du \bigg]+ \frac{1}{2}\int^t_0 Z_u\theta(u)^2\,du \\
+	&= 1 + \int^t_0 Z_u\theta(u)\,dW_u - \frac{1}{2}\int^t_0Z_u\theta(u)^2\,du + \frac{1}{2}\int^t_0 Z_u\theta(u)^2\,du \\
+	&= 1 + \int^t_0 Z_u\theta(u)\,dW_u
+\end{align*}		
+	
+In differential form our SDE becomes
+\begin{equation*}
+	dZ_t = Z_t\theta(t)\,dW_t \quad \text{with initial condition } Z_0 = 1
+\end{equation*}
+	
+as desired.
+\end{proof}
+\hfill\newline
+
+%=========Problem 3(c)===========%
+{\bf Problem 3 (c)}. 
+For $x > 0$ a constant, the process
+\begin{equation*}
+	X_t = (x^{^1/_3} + \frac{1}{3}W_t)^3
+\end{equation*}
+
+satisfies the SDE
+\begin{equation*}
+	dX_t = \frac{1}{3}X_t^{^1/_3}\,dt + X_t^{^2/_3}\,dW_t
+\end{equation*} \\
+
+{\bf Solution 3 (c).}
+\begin{proof} Consider $f(t,y) = (x + \frac{1}{3}y)^3$, for constant $x > 0$, then our derivatives are
+\begin{equation*}
+	f_t(t,y) = 	0 \quad f_{y}(t,y) = (x^{^1/_3} + \frac{1}{3}y)^2 \quad f_{yy}(t,y) = \frac{1}{3}(x^{^1/_3} + \frac{1}{3}y)
+\end{equation*}
+	
+and so by It\^{o}'s formula we have
+\begin{equation*}
+	f(t,y) = f(0,0) + \int^t_0 (x^{^1/_3} + \frac{1}{3}y)^2\,dy + \int^t_0 \frac{1}{3}(x^{^1/_3} + \frac{1}{3}y)\,d\langle y\rangle
+\end{equation*}
+	
+Substituting $y$ for $B_t$ we get
+\begin{align*}
+	X_t &= X_0 + \int^t_0 \big(x^{^1/_3} + \frac{1}{3}W_u\big)^2\,dW_u + \int^t_0 \frac{1}{3}\big(x^{^1/_3} + \frac{1}{3}W_u\big)\,d\langle W_{(\cdot)}\rangle_u \\
+	&= (x^{^1/_3})^3 + \int^t_0 \big(x^{^1/_3} + \frac{1}{3}W_u\big)^2\,dW_u + \frac{1}{3}\int^t_0 \big( x^{^1/_3} + \frac{1}{3}W_u\big) \,du \\
+\end{align*}
+
+and in differential form we have the SDE
+\begin{align*}
+	dX_t &= (x^{^1/_3} + \frac{1}{3}W_t)^2\,dW_t + \frac{1}{3}(x^{^1/_3} + \frac{1}{3}W_t)\,dt \\
+	dX_t &= X_t^{^2/_3}\,dW_t + \frac{1}{3}X_t^{^1/_3}\,dt \quad \text{with initial condition } X_0 = x
+\end{align*}
+	
+as desired.
+\end{proof}
+\hfill\newline
+
+%=========Problem 5===========%
+{\bf Problem 5}. Consider the process $X_t$ given by the SDE
+\begin{equation*}
+	dX_t = -X_t\,dt + e^{-t}\,dB_t
+\end{equation*}
+
+with $X_0 = 0$ and $B_t$ standard Brownian motion. Show that
+\begin{equation*}
+	\mathbb E[X_t] = 0
+\end{equation*}
+
+and 
+\begin{equation*}
+	\mathrm {Var}[X_t] = te^{-2t}
+\end{equation*}
+
+by solving ODEs for $\mathbb E[X_t]$ and $\mathbb E[X_t^2]$. \\
+
+%=========Solution 5===========%
+{\bf Solution 5}. In integral form our process $X_t$ is given by the SDE
+\begin{equation*}
+	X_t = X_0 - \int^t_0 X_u \,du + \int^t_0 e^{-u}\,dB_u
+\end{equation*}
+
+Taking the expectation 
+\begin{align*}
+	\mathbb E[X_t] &= \mathbb E\Big[0- \int^t_0 X_u \,du + \int^t_0 e^{-u}\,dB_u\Big] \\
+	&= - \mathbb E\Big[\int^t_0 X_u \,du\Big] + \mathbb E\Big[\int^t_0 e^{-u}\,dB_u\Big] \quad \text{(by linearity)} \\
+	&= - \mathbb E\Big[\int^t_0 X_u \,du\Big] 
+\end{align*}
+
+\indent Where the final line was achieved by realizing that $e^{-u}$ is $\mathcal F_t$-measurable, permitting us to apply the theorem verified in Problem 1. Our goal is to create a differential equation with $\mathbb E[X_t]$ as our function. We see that we are remarkably close to doing so if only there was a way to swap the expectation and integration operations. Fortunately we have Fubini's theorem in our toolbox:
+
+\begin{align*}
+	\mathbb E\Big[\int^t_0 X_u\,du \Big] &= \int_\Omega \int^t_0 X_u(\omega) \,du\,d\mathbb P(\omega) \\
+	&= \int^t_0 \int_\Omega X_u(\omega) \,d\mathbb P(\omega)\,du \\
+	&= \int^t_0 \mathbb E[X_u]\,du
+\end{align*}
+
+Hence
+\begin{align*}
+	\mathbb E[X_t] &= -\mathbb E\Big[\int^t_0 X_u \,du\Big] \\
+	&= -\int^t_0 \mathbb E[X_u]\,du
+\end{align*}
+
+And now we see that we have created a natural ODE. Letting $\phi(t) = \mathbb E[X_t]$
+\begin{align*}
+	\phi(t) &= -\int^t_0 \phi(u)\,du \\
+	\implies d\phi(t) &= -\phi(t)\,dt \\
+	\implies \frac{d\phi(t)}{\phi(t)} &= -\,dt \\
+	\implies \ln \phi(t) &= -t + k \\
+	\implies \phi(t) &= e^{-t + k} = Ce^{-t}
+\end{align*}
+
+Using our initial condition $X_0 = 0 = \mathbb E[X_0] = \phi(0)$
+\begin{align*}
+	\phi(0) = 0 &= Ce^{-t} \\
+	\implies C &= 0
+\end{align*}
+
+and so we're left with the conclusion
+\begin{equation*}
+	\phi(t) = \mathbb E[X_t] = 0\cdot e^{-t} = 0
+\end{equation*}
+
+as desired. For $\mathbb E[X_t^2]$, we lean on It\^{o}'s formula noting that since we are interested in $X_t^2$ we should consider $f(x) = x^2$. With our derivatives $f_x(x) = 2x,~ f_{xx}(x) = 2$ we apply It\^{o}'s formula
+\begin{equation*}
+	X_t^2 = X_0 + \int^t_0 2X_u \,dX_u + \frac{1}{2}\int^t_0 2\,d\langle X_{(\cdot)}\rangle_u
+\end{equation*}
+
+Since we were given $dX_t$ in the question we quickly compute $d\langle X_{(\cdot)}\rangle_t$
+\begin{align*}
+	dX_t &= -X_t\,dt + e^{-t}\,dB_t \\
+	d\langle X_{(\cdot)}\rangle_t &= \big(e^{-t}\big)^2\,d\langle B_{(\cdot)}\rangle_t  = e^{-2t}dt
+\end{align*}
+
+Thus,
+\begin{align*}
+	X_t^2 &= X_0 + \int^t_0 2X_u\,dX_u + \frac{1}{2}\int^t_0 2\,d\langle X_{(\cdot)}\rangle_u \\
+	&= 0 + \int^t_0 2X_u\Big[-X_u\,du + e^{-u}\,dB_u\Big] + \int^t_0 e^{-2u}\,du \\
+	&= - \int^t_0 2X_u^2\,du + 2\int^t_0 e^{-u}X_u\,dB_u + \int^t_0 e^{-2u}\,du \\
+\implies \mathbb E[X_t^2] &= \mathbb E\Bigg[- \int^t_0 2X_u^2\,du + 2\int^t_0 e^{-u}X_u\,dB_u + \int^t_0 e^{-2u}\,du\Bigg] \\
+	&= \mathbb -2E\Bigg[\int^t_0 X_u^2\,du\Bigg] + 2\mathbb E\Bigg[\int^t_0 e^{-u}X_u\,dB_u\Bigg] + \mathbb E\Bigg[\int^t_0 e^{-2u}\,du\Bigg] \quad \text{(by linearity)}\\
+	&= -2\mathbb E\Bigg[\int^t_0 X_u^2\,du\Bigg] + 0 + \mathbb E\Bigg[\int^t_0 e^{-2u}\,du\Bigg] \quad \text{(from Problem 1)} \\
+	&= -2\mathbb E\Bigg[\int^t_0 X^2_u \,du\Bigg] + \mathbb E\Big[-\frac{1}{2}e^{-2t}\Big] \\
+	&= -2\mathbb E\Bigg[\int^t_0 X^2_u \,du\Bigg] -\frac{1}{2}e^{-2t}
+\end{align*}
+
+\indent Where the last line was achieved by realizing that $-\frac{1}{2}e^{-2t}$ is deterministic in $t$. Once again we apply Fubini's Theorem on the remaining expectation,
+\begin{align*}
+	\mathbb E\Bigg[\int^t_0 X^2_u \,du\Bigg] &= \int_\Omega\int^t_0 X^2_u\,du\,d\mathbb P(\omega) \\
+	&= \int^t_0 \int_\Omega X_u^2 \,d\mathbb P(\omega)\,du \\
+	&= \int^t_0 \mathbb E\Big[X_u^2 \Big]\,du
+\end{align*}
+
+From this we see a natural ODE for $\mathbb E\big[X_t^2\big]$ emerge. Letting $\psi(t) = \mathbb E\big[X_t^2\big]$ 
+\begin{align*}
+	\psi(t) &= -2\int^t_0\psi(u)\,du - \frac{1}{2}e^{-2t}\\
+	d\psi(t) &= \big[e^{-2t} - 2\psi(t)\big]\,dt \\
+	\psi'(t) &= e^{-2t} - 2\psi(t)
+\end{align*}
+
+and so we go about solving our ODE in the typical manner
+\begin{align*}
+	e^{2t}\psi'(t) + 2e^{2t}\psi(t) &= 1 \\
+	\frac{d}{dt}\Big[e^{2t}\psi(t)\Big] &= 1 \\
+	\int \frac{d}{dt}\Big[e^{2t}\psi(t)\Big]\,dt &= \int 1\,dt \\
+	e^{2t}\psi(t) &= t + C \\
+	\psi(t) &= te^{-2t} + Ce^{-2t}
+\end{align*}
+
+Using our initial condition $X_0 = 0 \iff X_0^2 = 0 \implies \mathbb E[X^2_0] = \psi(0) = 0$
+\begin{align*}
+	\psi(0) = 0 &= 0\cdot e^{-2\cdot0} + Ce^{-2\cdot 0} \\
+	\implies C &= 0 \\
+	\implies \psi(t) &= te^{-2t}
+\end{align*}
+
+Thus we conclude with
+\begin{equation*}
+	\mathbb E[X_t^2] = \psi(t) = te^{-2t} 
+\end{equation*}
+
+as desired. \\
+
+%=========Problem 6===========%
+{\bf Problem 6}. Recall that stochastic integrals
+\begin{equation*}
+	\int^T_0 H_u\,dB_u
+\end{equation*}
+
+are martingales provided that the integrand $H$ is adapted and satisfies some technical (integrability) conditions. Using I\^{o}'s formula find a process $X_t$ such that
+\begin{equation*}
+	B^3_t - X_t
+\end{equation*}
+
+is a martingale. \\
+
+%=========Solution 6===========%
+{\bf Solution 6}. With $f(t,x,y) = x^3 - y$ we take our derivatives
+\begin{align*}
+	&f_t(t,x,y) = 0 \\
+	&f_x(t,x,y) = 3x^2 \quad f_{xx}(t,x,y) = 6x \\
+	&f_y(t,x,y) = -1 \quad f_{yy}(t,x,y) = 0 \\
+	&f_{xy}(t,x,y) = 0
+\end{align*} 
+
+then, by It\^{o}'s formula evaluating $x = B_t$ and $y = X_t$, we have
+\begin{align*}
+	B_t^3 - X_t &= B^3_0 - X_0 + \int^t_0 3B_u^2\,dB_u + \int^t_0 (-1)\,dX_u + \frac{1}{2}\int^t_0 6B_u\,d\langle B_{(\cdot)}\rangle_u \\
+	&= B^3_0 - X_0 + \int^t_0 3B_u^2\,dB_u - \int^t_0 \,dX_u + \int^t_0 3B_u\,du
+\end{align*}
+
+where the last line was achieved from recognizing that the quadratic variation of Brownian motion $\langle B_{(\cdot)}\rangle_t = dt$. Notice that without $-X_t$ we would be left with $B_t^3 = B^3_0 + \int^t_0 3B_u^2\,dB_u + \int^t_0 3B_u\,du$ showing us that we may have reason to believe that $B_t^3$ is not a martingale due to the appearance of the drift term $3\int^t_0 B_u\,du$. We later confirm this hypothesis, but for the time being we propose that $-X_t$ be some process that evaluates in a such a way to annihilate this drift. To achieve this annihilation it's immediately obvious that we must set 
+\begin{equation*}
+	\int^t_0 dX_u = \int^t_0 3B_u\,du \quad \text{and} \quad X_0 = x_0 \in \mathbb R\\
+\end{equation*}
+
+Thus
+\begin{align*}
+	X_t &= \int^t_0 3B_u\,du \quad \text{and} \quad X_0 = x_0 \\
+	X_t &= 3tB_t \quad \text{and} \quad X_0 = x_0
+\end{align*}
+
+is our process making $B_t^3 - X_t$ a martingale. To verify we take an expectation
+\begin{align*}
+	\mathbb E\Big[B_t^3 - 3tB_t \big|\mathcal F_s\Big] &= \mathbb E\Big[B_t^3 \big|\mathcal F_s\Big] - 3\mathbb E\Big[tB_t \big|\mathcal F_s \Big] \quad \text{(by linearity)} \\
+	&= \mathbb E\Big[B_t^3 \big|\mathcal F_s\Big] - 3t\mathbb E\Big[B_t \big|\mathcal F_s \Big] \quad \text{(since $t$ is deterministic)} \\
+	&= \mathbb E\Big[\big(B_t - B_s + B_s\big)^3 \big|\mathcal F_s\Big] -3tB_s \quad \text{(since $B_t$ is a martingale)}
+\end{align*}
+
+\indent Our strategy is to expand the cubic term inside the remaining expectation in such a way that we are only left with either independent increments of $B_t - B_s$ or isolated $\mathcal F_s$ measurable Brownian motions $B_s$. So,
+\begin{align*}
+	(B_t - B_s + B_s)^3 &= ((B_t - B_s) + B_s)^3 \quad \text{and recalling the binomial expansion}\\
+	&= (B_t - B_s)^3 + 3B_s(B_t - B_s)^2 + 3B_s^2(B_t - B_s) + B_s^3
+\end{align*}
+
+\indent Again applying linearity of expectation and recognizing that $B_s, B^2_s, B^3_s$ are $\mathcal F_s$-measurable we simplify our expectation to 
+\begin{align*}
+	\mathbb E\Big[\big(B_t - B_s + B_s\big)^3 \big|\mathcal F_s\Big] &= \mathbb E\Big[(B_t - B_s)^3\big|\mathcal F_s\Big] + 3B_s\mathbb E\Big[(B_t - B_s)^2\big|\mathcal F_s\Big] + 3B_s^2\mathbb E\Big[(B_t - B_s)\big|\mathcal F_s\Big] \\
+	&\hphantom{{}={\mathbb E\Big[(B_t - B_s)^3\big|\mathcal F_s\Big] + 3\mathbb E\Big[B_s(B_t - B_s)^2\big|\mathcal F_s\Big] + 3\mathbb E\Big[B_s^2(B_t - B}} + B_s^3
+\end{align*}
+Using the lemma
+\begin{equation*}
+	\mathbb E[(B_t - B_s)^m] =
+		\begin{cases}
+			0 & \text{if $m$ odd} \\
+			1 \cdot 3 \cdot \cdots \cdot (m-3)\cdot (m-1)\cdot(t-s)^{^m/_2} &\text{if $m$ even}
+		\end{cases}
+\end{equation*}
+
+we see that 
+\begin{align*}
+	\mathbb E\Big[\big(B_t - B_s + B_s\big)^3 \big|\mathcal F_s\Big] &=
+	\mathbb E\Big[(B_t - B_s)^3\big|\mathcal F_s\Big] + 3B_s\mathbb E\Big[(B_t - B_s)^2\big|\mathcal F_s\Big] + 3B_s^2\mathbb E\Big[(B_t - B_s)\big|\mathcal F_s\Big] \\
+	&\hphantom{{}={\mathbb E\Big[(B_t - B_s)^3\big|\mathcal F_s\Big] + 3\mathbb E\Big[B_s(B_t - B_s)^2\big|\mathcal F_s\Big] + 3\mathbb E\Big[B_s^2(B_t - B}} + B_s^3\\
+	&= 0 + 3B_s(t - s) + 0 + B^3_s \\
+	&= 3tB_s - 3sB_s + B^3_s
+\end{align*}
+
+\indent This convinces us that $B_t^3$ is indeed not a martingale alone since we have just shown that $\mathbb E[B_t^3|\mathcal F_s] \neq B_s^3$. Placing our ingredients together we get
+\begin{align*}
+	\mathbb E\Big[B_t^3 - 3tB_t \big|\mathcal F_s\Big] &= \big[3tB_s- 3sB_s + B^3_s\big] - 3tB_s \\
+	&= B^3_s - 3sB_s
+\end{align*}
+
+as desired. \\
+
+%=========Problem 7===========%
+{\bf Problem 7}. In the continuous time Black-Scholes model prove the put-call parity relationship
+\begin{equation*}
+	P(t,T,S,K) = C(t,T,S,K) + e^{-r(T-t)}K - S_t
+\end{equation*}
+
+between the price at time $t$ of a European call option, denoted $C(t,T,S,K)$, and the price of a European put option, denoted $P(t,T,S,K)$, with common strike price $K$ and maturity $T$. \\
+
+%=========Solution 7===========%
+{\bf Solution 7}.
+\begin{proof} Assume not. That is, assume
+\begin{equation*}
+	P_t \neq C_t + e^{-r(T - t)}K - S_t
+\end{equation*}
+
+We first consider the case $P_t < C_t + e^{-r(T - t)}K - S_t$ and build the strategy \\
+
+\begin{figure}[h!]
+\centering
+\begin{tabular}{r|c}
+Action at time $= t$ & Cash Flow\\
+\hline
+	Long 1 put & $-P_t$ \\
+ 	Short 1 call & $+C_t$ \\
+ 	Long underlying asset & $-S_t$ \\
+	Borrow at risk free rate &  $P_t - C_t + S_t$ \\
+\hline
+ Net & 0 
+\end{tabular}
+\end{figure}
+
+\indent Where we have exactly funded our long positions with the proceeds from our short position and borrowing. Note that our borrowing at the riskless rate is $P_t - C_t + S_t < e^{-r(T - t)}K$ by assumption. We see that at maturity either one of two cases will occur \\
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{r|c|c}
+	Action at time $= T$ & Cash flow if $S_T > K$ & Cash flow if $K > S_T$ \\
+\hline
+ 	Put payoff & 0 & $+K - S_T$ \\
+ 	Call payoff & $-(S_T - K)$ & 0 \\
+ 	Sell asset & $+S_T$ & $+S_T$ \\
+ 	Return funds &  $-(P_T - C_T + S_T)e^{r(T - t)}$ & $-(P_T - C_T + S_T)e^{r(T - t)}$ \\
+\hline
+ 	Net & $+K - (P_T - C_T  + S_T)e^{r(T - t)}$ & $+K - (P_T - C_T  + S_T)e^{r(T - t)}$
+\end{tabular}
+\end{figure}
+
+We note that in either case the net cash flow $K - (P_T - C_T + S_T)e^{-r(T - t)} > 0$ since
+\begin{equation*}
+	P_T - C_T + S_T < e^{-r(T - t)}K \iff (P_T - C_T + S_T)e^{r(T - t)} < K
+\end{equation*}
+
+\indent Thus we have managed to construct a risk-neutral portfolio with returns exceeding the risk free rate. Contradiction! The Black-Scholes model assumes that there may not be arbitrage in the market. Thus by the no-arbitrage assumption we are forced to conclude that our consideration for $P_t < C_t + e^{-r(T - t)}K - S_t$ is false. We now consider the case $P_t > C_t + e^{-r(T - t)}K - S_t$ and build the strategy \\
+
+\begin{figure}[h!]
+\centering
+\begin{tabular}{r|c}
+Action at time $= t$ & Cash Flow\\
+\hline
+	Short 1 put & $+P_t$ \\
+ 	Long 1 call & $-C_t$ \\
+ 	Short underlying asset & $-S_t$ \\
+	Invest at risk free rate &  $-P_t + C_t - S_t$ \\
+\hline
+ Net & 0 
+\end{tabular}
+\end{figure}
+
+\indent Where we have exactly funded our long position and investment with the proceeds from our short positions. Note that our investment at the riskless rate is $-P_t + C_t - S_t > e^{-r(T - t)}K$ by assumption. We see that at maturity either one of two cases will occur \\
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{r|c|c}
+	Action at time $= T$ & Cash flow if $S_T > K$ & Cash flow if $K > S_T$ \\
+\hline
+ 	Put payoff & 0 & $-(K - S_T)$ \\
+ 	Call payoff & $+S_T - K$ & 0 \\
+ 	Return asset & $-S_T$ & $-S_T$ \\
+ 	Receive funds &  $(P_T - C_T + S_T)e^{r(T - t)}$ & $(P_T - C_T + S_T)e^{r(T - t)}$ \\
+\hline
+ 	Net & $(P_T - C_T  + S_T)e^{r(T - t)} - K$ & $(P_T - C_T + S_T)e^{r(T - t)} - K$
+\end{tabular}
+\end{figure}
+
+We note that in either case the net cash flow $(P_T - C_T + S_T)e^{-r(T - t)} - K > 0$ since
+\begin{equation*}
+	P_T - C_T + S_T > e^{-r(T - t)}K \iff (P_T - C_T + S_T)e^{r(T - t)} > K
+\end{equation*}
+
+\indent Thus we have managed to construct a risk-neutral portfolio with returns exceeding the risk free rate. Contradiction! The Black-Scholes model assumes that there may not be arbitrage in the market. Thus by the no-arbitrage assumption we are forced to conclude that our consideration for $P_t > C_t + e^{-r(T - t)}K - S_t$ is false. Since we have determined that $P_t < C_t + e^{-r(T - t)}K - S_t$ cannot be true and that $P_t > C_t + e^{-r(T - t)}K - S_t$ cannot be true we are forced to reject the initial assumption that $P_t \neq C_t + e^{-r(T - t)}K - S_t$ and conclude that
+\begin{equation*}
+	P_t = C_t + e^{-r(T - t)}K - S_t
+\end{equation*}
+
+as desired.
+\end{proof}
+
+
+\newpage
+\appendix
+\section{The Long \& Hard Way of Deriving Put-Call Parity}
+\begin{center}
+{\bf I only left this section in for my own future reference. Feel free to ignore.}
+\end{center}
+
+
+\begin{proof} We will first derive the Black-Scholes price of a European put option on an underlying asset process $S$, strike $K$, and expiry at time $T$. That is, a European put option with payoff $h_T = (K - S_T)^+$ at time $T$. \\
+
+By the risk neutral pricing formula we have that
+\begin{align*}
+	P_t(S_t) &= \mathbb E_{\mathbb Q}[e^{-r(T - t)}(K - S_T)^+| \mathcal F_t] \\
+	&= \mathbb E_{\mathbb Q}[e^{-r(T - t)}(K - S_T) \cdot\mathds 1_{\{K > S_T\}}| \mathcal F_t] \quad \text{and, by linearity we have} \\
+	&= Ke^{-r(T - t)}\mathbb E_{\mathbb Q}[\mathds 1_{\{K > S_T\}}| \mathcal F_t] -\mathbb E_{\mathbb Q}[ e^{-r(T - t)}S_T \cdot \mathds 1_{\{K > S_T\}}| \mathcal F_t] \\
+\end{align*}
+
+\indent And so it is now our task to determine the expectations $\mathbb E_{\mathbb Q}[\mathds 1_{\{K > S_T\}}| \mathcal F_t]$ and $E_{\mathbb Q}[ e^{-r(T - t)} S_T \cdot \mathds 1_{\{K > S_T\}}| \mathcal F_t]$. We consider first the expectation $\mathbb E_{\mathbb Q}[\mathds 1_{\{K > S_T\}}| \mathcal F_t]$, noting that
+\begin{align*}
+	K > S_T &\implies K > S_t\exp{\big[(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)\big]} \\
+	&\implies \log(K) > \log(S_t) + (r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t) \\
+	&\implies \frac{-\log(\frac{S_t}{K}) - (r - \frac{1}{2}\sigma^2)(T - t)}{\sigma} > W_T - W_t
+\end{align*}
+
+For brevity let $-Y_t = \frac{-\log(\frac{S_t}{K}) - (r - \frac{1}{2}\sigma^2)(T - t)}{\sigma}$, then we may rewrite our problem as
+\begin{align*}
+	\mathbb E_{\mathbb Q}[\mathds 1_{\{K > S_T\}} | \mathcal F_t] = \mathbb E_{\mathbb Q}[\mathds 1_{\{-Y_t > W_T - W_t\}} | \mathcal F_t]
+\end{align*}
+
+\indent Since $-Y_t$ is $\mathcal F_t$-measurable and the Brownian increment $W_T - W_t$ is independent of our filtration we may use the result that permits us to write
+\begin{equation*}
+	\mathbb E_{\mathbb Q}[\mathds 1_{\{-Y_t > W_T - W_t\}} | \mathcal F_t] = \mathbb E_{\mathbb Q}[\mathds 1_{\{-Y_t > W_T - W_t\}}]
+\end{equation*}
+
+and thus we have reduced our problem to a simple problem of integration with the normal distribution function. That is, since the increment $W_T - W_t \sim N(0,T - t)$ we have
+\begin{equation*}
+	\mathbb E_{\mathbb Q}[\mathds 1_{\{-Y_t > W_T - W_t\}}] = \frac{1}{\sqrt{2\pi(T - t)}}\int^{-Y_t}_{-\infty} e^{-\frac{1}{2(T - t)}z^2}\,dz
+\end{equation*}
+
+We use the substitution
+\begin{align*}
+	&u = \frac{z}{\sqrt{T - t}} \implies du = \frac{dz}{\sqrt{T - t}} \\
+	\therefore -&d_2 := u(-Y_t) = \frac{-Y_t}{\sqrt{T - t}}
+\end{align*}
+
+Thus
+\begin{align*}
+	\mathbb E_{\mathbb Q}[\mathds 1_{\{-d_2 > W_T - W_t\}}] &= \frac{1}{\sqrt{2\pi(T - t)}}\int^{-d_2}_{-\infty} e^{-\frac{1}{2(T - t)}z^2}\,dz \\
+	&= \frac{1}{\sqrt{2\pi(T - t)}}\int^{-d_2}_{-\infty} e^{-\frac{1}{2(T - t)}(u\sqrt{T - t})^2}\sqrt{T - t}\,du \\
+	&= \frac{1}{\sqrt{2\pi}}\int^{-d_2}_{-\infty} e^{-\frac{1}{2}u^2}\,du \\
+	&= \Phi[-d_2]
+\end{align*}
+
+as expected. We now consider the expectation $\mathbb E_{\mathbb Q}[ e^{-r(T - t)} S_T \cdot \mathds 1_{\{K > S_T\}}| \mathcal F_t]$. We have
+\begin{align*}
+	\mathbb E_{\mathbb Q}[ e^{-r(T - t)} S_T \cdot \mathds 1_{\{K > S_T\}}| \mathcal F_t] &= \mathbb E_{\mathbb Q}\bigg[ e^{-r(T - t)} S_0 \exp{\big[(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)\big]} \mathds 1_{\{K > S_T\}} \bigg|\mathcal F_t\bigg] \\
+	&= \mathbb E_{\mathbb Q}\bigg[S_0 \exp{\big[-\frac{1}{2}\sigma^2(T - t) + \sigma(W_T - W_t)\big]} \mathds 1_{\{K > S_T\}} \bigg| \mathcal F_t\bigg] \\
+\end{align*}
+
+Once again letting $-Y_t = \frac{-\log(\frac{S_t}{K}) - (r - \frac{1}{2}\sigma^2)(T - t)}{\sigma}$ we have
+\begin{align*}
+	\mathbb E_{\mathbb Q}[ e^{-r(T - t)} S_T \cdot \mathds 1_{\{K > S_T\}}| \mathcal F_t] &= \mathbb E_{\mathbb Q}\bigg[S_t \exp{\big[-\frac{1}{2}\sigma^2(T - t) + \sigma(W_T - W_t)\big]} \mathds 1_{\{K > S_T\}} \bigg| \mathcal F_t\bigg] \\
+	&= \mathbb E_{\mathbb Q}\bigg[S_t \exp{\big[-\frac{1}{2}\sigma^2(T - t) + \sigma(W_T - W_t)\big]} \mathds 1_{\{-Y_t > W_T - W_t\}} \bigg| \mathcal F_t\bigg] \\
+	&= S_te^{-\frac{1}{2}\sigma^2(T - t)} \mathbb E_{\mathbb Q}\bigg[e^{\sigma(W_T - W_t)}\mathds 1_{\{-Y_t > W_T - W_t\}} \bigg| \mathcal F_t \bigg] \\
+\end{align*}
+
+\indent We again note that our expectation contains $W_T - W_t$ and a function of $W_T - W_t$ both of which are random variables independent of our filtration, and $-Y_t$ which is $\mathcal F_t$-measurable. Thus we write
+\begin{align*}
+	\mathbb E_{\mathbb Q}[ e^{-r(T - t)} S_T \cdot \mathds 1_{\{K > S_T\}}| \mathcal F_t] &= 
+S_te^{-\frac{1}{2}\sigma^2(T - t)} \mathbb E_{\mathbb Q}\bigg[e^{\sigma(W_T - W_t)}\mathds 1_{\{-Y_t > W_T - W_t\}} \bigg| \mathcal F_t \bigg]  \\
+	&= S_te^{-\frac{1}{2}\sigma^2(T - t)} \mathbb E_{\mathbb Q}\bigg[e^{\sigma(W_T - W_t)}\mathds 1_{\{-Y_t > W_T - W_t\}}\bigg] \\	
+	 &= \frac{S_te^{-\frac{1}{2}\sigma^2(T - t)}}{\sqrt{2\pi(T - t)}} \int^{-Y_t}_{-\infty} e^{\sigma z} e^{-\frac{1}{2(T - t)} z^2}\,dz
+\end{align*}
+
+Performing the substitution
+\begin{align*}
+	&u = \frac{z}{\sqrt{T - t}} \implies dz = \sqrt{T - t}\,du \\
+	\therefore -&d_2 := u(-Y_t) = \frac{-Y_t}{\sqrt{T - t}}
+\end{align*}
+
+Thus
+\begin{align*}
+	\mathbb E_{\mathbb Q}[ e^{-r(T - t)} S_T \cdot \mathds 1_{\{K > S_T\}}] &= \frac{S_te^{-\frac{1}{2}\sigma^2(T - t)}}{\sqrt{2\pi(T - t)}} \int^{-d_2}_{-\infty} e^{\sigma u\sqrt{T - t}} e^{-\frac{1}{2(T - t)}(u\sqrt{T - t})^2}\sqrt{T - t}\,du \\ 
+	&= \frac{S_te^{-\frac{1}{2}\sigma^2(T - t)}}{\sqrt{2\pi}} \int^{-d_2}_{-\infty} e^{\sigma u\sqrt{T - t}} e^{-\frac{1}{2}u^2}\,du \\ 
+	&= \frac{S_t}{\sqrt{2\pi}} \int^{-d_2}_{-\infty} e^{-\frac{1}{2}\sigma^2(T - t) + \sigma u\sqrt{T - t} - \frac{1}{2}u^2}\,du \\ 
+\end{align*}
+
+\indent We then recognize that the exponentiated term in the integrand is conveniently a perfect square
+\begin{equation*}
+	-\frac{1}{2}\sigma^2(T - t) + \sigma u\sqrt{T - t} - \frac{1}{2}u^2 = -\frac{1}{2}(\sigma\sqrt{T - t} - u)^2
+\end{equation*}
+
+So we have
+\begin{equation*}
+	\mathbb E_{\mathbb Q}[ e^{-r(T - t)} S_T \cdot \mathds 1_{\{K > S_T\}}] = \frac{S_t}{\sqrt{2\pi}} \int^{-d_2}_{-\infty} e^{-\frac{1}{2}(\sigma\sqrt{T - t} - u)^2}\,du 
+\end{equation*}
+
+Performing another substitution
+\begin{align*}
+	&v = u - \sigma\sqrt{T - t} \implies dv = du \\
+	\therefore -&d_1 := v(-d_2) = -d_2 - \sigma\sqrt{T - t}
+\end{align*}
+
+We are left with
+\begin{align*}
+	\mathbb E_{\mathbb Q}[ e^{-r(T - t)} S_T \cdot \mathds 1_{\{K > S_T\}}] &= \frac{S_t}{\sqrt{2\pi}} \int^{-d_1}_{-\infty} e^{-\frac{1}{2}v^2}\,dv \\
+	&= S_t\Phi[-d_1]
+\end{align*}
+
+\indent Finally, we conclude that the Black-Scholes price of a European-style put option on an underlying asset process $S$, strike $K$, and expiry at time $T$ is
+\begin{align*}
+	P_t(S_t) &= \mathbb E_{\mathbb Q}[e^{-r(T - t)}(K - S_T)^+] \\
+	&= Ke^{-r(T - t)}\mathbb E_{\mathbb Q}[\mathds 1_{\{K > S_T\}}] -\mathbb E_{\mathbb Q}[ e^{-r(T - t)}S_T \cdot \mathds 1_{\{K > S_T\}}] \\
+	&= Ke^{-r(T - t)}\Phi[-d_2] - S_t\Phi[-d_1]
+\end{align*}
+
+as expected, with $\Phi(x)$ the normal cumulative distribution function. The second component in proving the put-call parity relationship is to retrieve the Black-Scholes price of a European call option on an underlying asset process $S$, strike $K$, and expiry at time $T$. Fortunately this has already been done by us (in class) and is
+\begin{align*}
+	C_t(S_t) &= \mathbb E_{\mathbb Q}[e^{-r(T - t)}(S_T - K)^+ |\mathcal F_t] \\
+	&= \mathbb E_{\mathbb Q}[ e^{-r(T - t)}S_T \cdot \mathds 1_{\{S_T > K\}} |\mathcal F_t] - Ke^{-r(T - t)}\mathbb E_{\mathbb Q}[\mathds 1_{\{S_T > K\}} |\mathcal F_t] \\
+	&= S_t\Phi[d_1] - Ke^{-r(T - t)}\Phi[d_2]
+\end{align*}
+
+With all our ingredients ready we finally tackle the put-call parity equation:
+\begin{align*}
+	P(t,T,S,K) &= C(t,T,S,K) + e^{-r(T - t)}K - S_t \\
+	Ke^{-r(T - t)}\Phi[-d_2] - S_t\Phi[-d_1] &= S_t\Phi[d_1] - Ke^{-r(T - t)}\Phi[d_2] + e^{-r(T - t)}K - S_t\\
+	e^{-r(T - t)}K\big(\Phi[-d_2] + \Phi[d_2]\big) &= S_t\big(\Phi[d_1] + \Phi[-d_1]\big) + e^{-r(T - t)}K - S_t
+\end{align*}
+
+Recalling the properties of the normal distribution function, $\Phi(-x) = 1 - \Phi(x)$ we get
+\begin{align*}
+	e^{-r(T - t)}K\big(1 - \Phi[d_2] + \Phi[d_2]\big) &= S_t\big(\Phi[d_1] + 1 - \Phi[d_1]\big) + e^{-r(T - t)}K - S_t \\
+	e^{-r(T - t)}K &= S_t + e^{-r(T - t)}K - S_t \\
+	e^{-r(T - t)}K - S_t &= e^{-r(T - t)}K - S_t
+\end{align*}
+
+and we see that this is now trivially true and get our result as desired.
+\end{proof}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}
+

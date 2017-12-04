@@ -1,0 +1,640 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Introduction to Stochastic Calculus}
+\date{October 1 2015 \\ Last update: \today{}}
+\maketitle
+
+%% SECTION: ITO CALCULUS
+\begin{section}{It\^{o} Calculus} 
+
+Last time we claimed
+\begin{equation*}
+	\int^t_0 B_u\,dB_u = \frac{1}{2}B^2_t - \frac{t}{2}
+\end{equation*}
+
+\begin{proof} To show this we will set up a sequence of simple functions $H^n \longrightarrow B \in \mathcal H_T$ and split our Brownian Motion into $n$ intervals. 
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}
+\begin{axis}
+	[
+		height 			= 6cm,
+		width		 	= 10cm,
+		axis line style	= {->}, % arrows on the axis
+		xmin				= 0,
+		xmax				= 8,
+		xtick 			= {1,3,4,7},
+		xticklabels 		= {$t_1$,$t_2$,$t_3$,$T$},
+		xlabel			= {$t$},          % default put x on x-axis
+		axis x line		= middle,    % put the x axis in the middle
+        ymin				= 0,
+		ymax				= 1.8,
+		ylabel			= {$B_t(\omega)$},          % default put y on y-axis
+		axis y line 		= middle,    % put the y axis in the middle
+		ytick style 		= {draw = none},
+		yticklabels		= {},			
+        ]
+	\Emmett{468}{1.5}{10}{black}{}
+	\addplot[soldot]coordinates{(0,0)(1,0.7)(3,1.5)(4,1.15)(7,0.66)};
+	\addplot[holdot]coordinates{(1,0)(3,0.7)(4,1.5)(7,1.15)};
+       	\addplot[cmhplot,-,domain=0:1]{0};
+         \addplot[cmhplot,-,domain=1:3]{0.7};
+        	\addplot[cmhplot,-,domain=3:4]{1.5};
+        	\addplot[cmhplot,-,domain=4:7]{1.15};
+	\draw[thick, dotted] (axis cs:1,0) -- (axis cs:1,0.7);
+	\draw[thick, dotted] (axis cs:3,0) -- (axis cs:3,1.5);
+	\draw[thick, dotted] (axis cs:4,0) -- (axis cs:4,1.5);
+	\draw[thick, dotted] (axis cs:7,0) -- (axis cs:7,1.15);
+\end{axis}
+\end{tikzpicture}
+\end{figure}
+
+Define
+\begin{equation*}
+	H^n(u) =
+		\begin{cases}
+			B(0) & \text{if } 0 \leq u < \frac{T}{n} \\
+			B(\frac{T}{n}) & \text{if } \frac{T}{n} \leq u < 2\frac{T}{n} \\
+			\vdots & \vdots \\
+			B(k\frac{T}{n}) & \text{if } k\frac{T}{n} \leq u < (k + 1)\frac{T}{n} \\
+			\vdots & \vdots \\
+			B((n-1)\frac{T}{n}) &\text{if } (n - 1)\frac{T}{n} \leq u < T
+		\end{cases}
+\end{equation*}
+
+\indent Then, $H^n$ is a sequence of simple processes in $H_T$ such that $H^n \longrightarrow B$. Using the definition and letting $B_k = B(k\frac{T}{n})$
+\begin{equation*}
+	\implies \int^T_0 H^n(u)\,dB(u) = \sum^{n-1}_{k = 0} B_k(B_{k+1} - B_k)
+\end{equation*}
+
+Doing some algebra we note that 
+\begin{align*}
+	\frac{1}{2}\sum^{n-1}_{k=0}(B_{k+1} - B_k)^2 &= \frac{1}{2}\sum^{n-1}_{k=0}(B^2_{k+1} - 2B_kB_{k+1} + B^2_k) \\
+	&= \frac{1}{2}B^2_n + \frac{1}{2}\sum^{n-1}_{k=0}B^2_k - \sum^{n-1}_{k=0}B_kB_{k+1} + \frac{1}{2}\sum^{n-1}_{k=0}B^2_k \\
+	&= \frac{1}{2}B^2_n - \sum^{n-1}_{k=0}B_k(B_{k+1} - B_k) \\
+	\implies \sum^{n-1}_{k = 0} B_k(B_{k+1} - B_k) &= \frac{1}{2}B_n^2 -  \sum^{n-1}_{k=0}(B_{k+1} - B_k)^2 \\
+	\iff \int^T_0 H^n(u)\,dB(u) &= \frac{1}{2}B_(T)^2 -  \sum^{n-1}_{k=0}(B_{k+1} - B_k)^2
+\end{align*}
+
+Then, to show that 
+\begin{equation*}
+	\int^T_0 B(u)\,dB(u) = \frac{1}{2}B(T)^2 - \frac{T}{2}
+\end{equation*}
+
+as we have claimed we will consider the limit in $L^2$.
+\begin{align*}
+	D &= \norm{\int^T_0 H^n(u)\,dB(u) - \Big(\frac{1}{2}B(T)^2 - \frac{1}{2}T\Big)}^2_2 \\
+	&= \norm{\Bigg(\Big[\frac{1}{2}B(T)^2 - \frac{1}{2}\sum^{n-1}_{k = 0}(B_{k+1} - B_k)^2\Big] - \Big[\frac{1}{2}B(T)^2 - \frac{1}{2}T\Big]\Bigg)}^2_2 \quad \text{as } n \longrightarrow \infty
+\end{align*}
+
+We can simplify this a little by noting 
+\begin{align*}
+	D &= \norm{\Bigg(\frac{1}{2}\sum^{n-1}_{k = 0}(B_{k+1} - B_k)^2 - \frac{1}{2}T \Bigg)}^2_2 \\
+	&= \mathbb E\Bigg[\frac{1}{4}\Bigg(\sum^{n-1}_{k = 0}(B_{k+1} - B_k)^2 - T\Bigg)^2\Bigg]
+\end{align*}
+which resembles the form we saw when looking at quadratic variation of Brownian motion. Before showing that $D \longrightarrow 0$ we will need the assistance of a few preliminary results.
+
+%% LEMMA 1
+\begin{lemma} If $s \leq t$
+	\begin{equation*}
+		\mathbb E[(B_t - B_s)^m] =
+			\begin{cases}
+				0 & \text{if $m$ odd} \\
+				1 \cdot 3 \cdots (m-3)\cdot (m-1)(t-s)^{^m/_2} &\text{if $m$ even}
+			\end{cases}
+	\end{equation*}
+\begin{proof} Note that $(B_t - B_s)\sim N(0,(t-s))$, therefore the claim is clearly true for $m = 1,2$ (first and second moments of a normal random variable). If $X$ is a normal random variable with mean 0 and variance $\sigma^2$ then
+\begin{equation*}
+	\mathbb E[X^m] = \frac{1}{\sigma\sqrt{2\pi}}\int^\infty_{-\infty} x^me^{-\frac{1}{2}\frac{x^2}{\sigma^2}}\,dx
+\end{equation*}
+If $m$ is odd then we have
+\begin{align*}
+	\mathbb E[X^m] &= \frac{1}{\sigma\sqrt{2\pi}}\int^\infty_{-\infty} x^me^{-\frac{1}{2}\frac{x^2}{\sigma^2}}\,dx \\
+	&= \frac{1}{\sigma\sqrt{2\pi}}\lim_{k\to\infty}\Bigg(\int^0_{-k} x^me^{-\frac{1}{2}\frac{x^2}{\sigma^2}}\,dx + \int^k_{0} x^me^{-\frac{1}{2}\frac{x^2}{\sigma^2}}\,dx\Bigg) \\
+	&= \frac{1}{\sigma\sqrt{2\pi}}\lim_{k\to\infty}\Bigg(-\int^k_{0} v^me^{-\frac{1}{2}\frac{v^2}{\sigma^2}}\,dv + \int^k_{0} x^me^{-\frac{1}{2}\frac{x^2}{\sigma^2}}\,dx\Bigg) \quad \text{(let $v = -x$ in the first integral)} \\
+	&= 0 \quad \text{(realising that $v$ and $x$ in the integrands are dummy variables)}
+\end{align*}
+
+If $m$ is even then let $m = 2n$ for $n = 1,2,\cdots$, and we have
+\begin{align*}
+	\mathbb E[X^{2n}] &= \frac{1}{\sigma\sqrt{2\pi}}\lim_{k\to\infty}\Bigg(\int^0_{-k} x^{2n}e^{-\frac{1}{2}\frac{x^2}{\sigma^2}}\,dx + \int^k_{0} x^{2n}e^{-\frac{1}{2}\frac{x^2}{\sigma^2}}\,dx\Bigg)\\
+	&= \frac{1}{\sigma\sqrt{2\pi}}\lim_{k\to\infty}\Bigg(\int^k_{0} v^{2n}e^{-\frac{1}{2}\frac{v^2}{\sigma^2}}\,dx + \int^k_{0} x^{2n}e^{-\frac{1}{2}\frac{x^2}{\sigma^2}}\,dx\Bigg) \\
+	&= \frac{1}{\sigma}\sqrt{\frac{2}{\pi}}\lim_{k\to\infty}\Bigg(\int^k_0 v^{2n}e^{-\frac{1}{2}\frac{v^2}{\sigma^2}}\,dv\Bigg) \\
+	&= \frac{1}{\sigma}\sqrt{\frac{2}{\pi}}\lim_{k\to\infty}\Bigg(\int^k_0 (\sigma u)^{2n}e^{-\frac{1}{2}u^2}\sigma\,du \Bigg) \quad \text{(letting $u(v) = v/\sigma$)} \\
+	&= \sigma^{2n}\sqrt{\frac{2}{\pi}}\lim_{k\to\infty}\Bigg(\int^{k/\sigma}_0 u^{2n}e^{-\frac{1}{2}u^2}\,du\Bigg) \\
+	&=  \sigma^{2n}\sqrt{\frac{2}{\pi}}\lim_{k\to\infty}\Bigg(2^{n-\frac{1}{2}}\int^{k^2/2\sigma^2}_0 w^{n-\frac{1}{2}}e^{-w}\,dw\Bigg) \quad \text{(letting $w(u) = \frac{u^2}{2})$} \\
+	&=  \sigma^{2n}\sqrt{\frac{2}{\pi}}2^{n-\frac{1}{2}}\Gamma\Big(n + \frac{1}{2}\Big) \quad \Big(\text{where } \Gamma(\alpha) = \int^\infty_0 x^{\alpha-1}e^{-x}\,dx, \alpha > 0 \Big) \\
+	&= \sigma^{2n}\frac{2^n}{\sqrt{\pi}}\Gamma\Big(n + \frac{1}{2}\Big)
+\end{align*}
+Note that
+\begin{align*}
+	\Gamma\Big(n + \frac{1}{2}\Big) &= \Big(n - \frac{1}{2}\Big)\cdot\Big(n - \frac{3}{2}\Big)\cdots \Big(\frac{3}{2}\Big)\cdot\Big(\frac{1}{2}\Big)\cdot\Gamma\Big(\frac{1}{2}\Big) \\
+	&= \Big(n - \frac{1}{2}\Big)\cdot\Big(n - \frac{3}{2}\Big)\cdots \Big(\frac{3}{2}\Big)\cdot\Big(\frac{1}{2}\Big)\cdot\sqrt{\pi} \\
+	&= \Big[\prod^n_{i=1}\Big(n - \frac{2i - 1}{2}\Big)\Big]\sqrt{\pi}
+\end{align*}
+
+Substituting this result back into the expression for $\mathbb E[X^{2n}]$ yields
+\begin{align*}
+	\mathbb E[X^{2n}] &= \sigma^{2n}\frac{2^n}{\sqrt{\pi}}\Big[\prod^n_{i=1}\Big(n - \frac{2i - 1}{2}\Big)\Big]\sqrt{\pi} \\
+	&= \sigma^{2n}\Big[\prod^n_{i=1}\Big(2n - 2i + 1\Big)\Big] \\
+	&= [\sigma^{2}]^n\cdot1\cdot3\cdots(2n-3)\cdot(2n-1)
+\end{align*}
+Substituting $X = B_t - B_s$ we have $\sigma^2 = (t - s)$ and obtain the result as desired.
+\end{proof}
+\end{lemma}
+
+%% LEMMA 2
+\begin{lemma} Suppose $\pi = \{0 = t_0 < t_1 < \cdots < t_N =T\}$ is a partition of $[0,T]$. Then,
+\begin{equation*}
+	\mathbb E\Bigg[\Bigg(\Big[\sum^{n-1}_{j=0}(B_{t_{j+1}} - B_{t_j})^2\Big] - T \Bigg)^2\Bigg] = 2 \sum^{n-1}_{j=0}(t_{j+1} - t_j)^2
+\end{equation*}
+\begin{proof} Note that
+\begin{align*}
+	\Bigg(\Big[\sum^{n-1}_{j=0}(B_{t_{j+1}} - B_{t_j})^2\Big] - T \Bigg)^2 &= \sum^{n-1}_{j=0}(B_{t_{j+1} - B_{t_j}})^4 - 2T\sum^{n-1}_{j=0}(B_{t_{j+1}} - B_{t_j})^2 \\
+	&\hphantom{{}= \sum^{n-1}_{j=0}(B_{t_{j+1} - B_{t_j}})^4 - } +\mathop{\sum_{j=0}^{n-1}\sum_{i=0}^{n=1}}_{i\neq j}(B_{t_{j+1} - B_{t_j}})^2(B_{t_{i+1} - B_{t_i}})^2 + T^2
+\end{align*}
+
+But by Lemma 1 we have
+\begin{align*}
+	\mathbb E[(B_{t_{j+1} - B_{t_j}})^4] &= 3(t_{j+1} - t_j)^2 \\
+	\mathbb E[(B_{t_{j+1} - B_{t_j}})^2] &= t_{j+1} - t_j
+\end{align*}
+
+and by independence, for $i \neq j$
+\begin{align*}
+	\mathbb E[(B_{t_{j+1} - B_{t_j}})^2(B_{t_{i+1} - B_{t_i}})^2] &= \mathbb E[(B_{t_{j+1} - B_{t_j}})^2]\mathbb E[(B_{t_{u+1} - B_{t_i}})^2] \\
+	&= (t_{j+1} - t_j)(t_{i+1} - t_i)
+\end{align*}
+
+Therefore,
+\begin{align*}
+	\mathbb E\Bigg[\Bigg(\Big[\sum^{n-1}_{j=0}(B_{t_{j+1}} - B_{t_j})^2\Big] - T \Bigg)^2\Bigg] &= 3\sum^{n-1}_{j=0}(t_{j+1} - t_j)^2 - 2T\sum^{n-1}_{j=0}(t_{j+1} - t_j) \\
+	&\hphantom{{}=3\sum^{n-1}_{j=0}(t_{j+1} - t_j)^2 -}+\mathop{\sum_{j=0}^{n-1}\sum_{i=0}^{n=1}}_{i\neq j}(t_{j+1} - t_j)(t_{i+1} - t_i) + T^2 \\
+	&= 2\sum^{n-1}_{j=0}(t_{j+1} - t_j)^2 - 2T\sum^{n-1}_{j=0}(t_{j+1} - t_j) \\
+	&\hphantom{{}=2\sum^{n-1}_{j=0}(t_{j+1} - t_j)^2 -}+\sum_{j=0}^{n-1}\sum_{i=0}^{n=1}(t_{j+1} - t_j)(t_{i+1} - t_i) + T^2 \\
+	&=  2\sum^{n-1}_{j=0}(t_{j+1} - t_j)^2 - 2T^2 + \Bigg(\sum^{n-1}_{j=0}(t_{j+1} - t_j)\Bigg)^2 + T^2 \\
+	&= 2\sum^{n-1}_{j=0}(t_{j+1} - t_j)^2 - 2T^2 + T^2 + T^2 \\
+	&= 2\sum^{n-1}_{j=0}(t_{j+1} - t_j)^2
+\end{align*}
+as desired.
+\end{proof}
+\end{lemma}
+
+Finally, going back to our original integral we have, with $t_k = k\frac{T}{n}$,
+\begin{align*}
+	D &= \mathbb E\Bigg[\frac{1}{4}\Bigg(\sum^{n-1}_{k=0}(B_{k+1} - B_k)^2 - T\Bigg)^2\Bigg] \quad \text{(from Lemma 2)}\\
+	&= \frac{1}{2}\sum^{n - 1}_{k = 0}(t_{k+1} - t_k)^2 = \frac{1}{2}\sum^{n-1}_{k = 0}((k+1)\frac{T}{n} - k\frac{T}{n})^2 \\
+	&= \frac{1}{2}\sum^{n - 1}_{k = 0}\Big(\frac{T}{n}\Big)^2 = \frac{1}{2}\frac{T^2}{n} \longrightarrow 0 \quad \text{as $n\longrightarrow \infty$}
+\end{align*}
+
+Since we have shown that, as $n \longrightarrow \infty$,
+\begin{align*}
+	D &= \mathbb E\Bigg[\frac{1}{4}\Bigg(\sum^{n-1}_{k=0}(B_{k+1} - B_k)^2 - T\Bigg)^2\Bigg] \longrightarrow 0 \quad \text{which is equivalent to} \\
+	&= \norm{\int^T_0 H^n(u)\,dB(u) - \Big(\frac{1}{2}B(T)^2 - \frac{1}{2}T\Big)}^2_2 \longrightarrow 0
+\end{align*}
+
+We may conclude that
+\begin{equation*}
+	\int^T_0 B_u\,dB_u = \frac{1}{2}B^2_T - \frac{T}{2}
+\end{equation*}
+\end{proof}
+
+\indent After having gone through all these steps we realise that we never actually want to go through the definitions again to actually be able to compute these integrals. We will soon discuss better ways of finding solutions. \\
+
+\indent If we define $I(t) = \int^t_0 B_u\,dB_u = \frac{1}{2}B^2_t - \frac{t}{2}$ then we can see that $I(t)$ is a martingale (from the fact that Brownian increments are martingales). In general, any stochastic integral $\int^t_0 H_u\,dB_u$ is a martingale for ``nice'' integrands $H$. So, the martingale property gives us
+\begin{equation*}
+	\mathbb E[I(t) | \mathcal F_0] = \mathbb E[I(t)] = I(0) = 0
+\end{equation*}
+
+\indent So we see another reason why $\int^t_0B_u\,dB_u$ cannot be $\frac{1}{2}B^2_t$ since the martingale property requires $\mathbb E[\int^t_0 B_u\,dB_u] = 0 = \mathbb E[\frac{1}{2}B_t^2 - \frac{t}{2}]$. Thus, $\mathbb E[\frac{1}{2}B^2_t] = \frac{1}{2}t \neq 0$ violating the martingale property. 
+
+%% THEOREM
+\begin{theorem}{For an It\^{o} $I_t(H) = \int^t_0 H_u\,dB_u$, the quadratic variation is $\langle I_{(\cdot)}(H)\rangle_t = \int^t_0 H^2_u\,du$} \hfill
+\begin{proof} {\em (Very brief points).} For a suitable $H$, It\^{o} isometry (Pythagoras' Principle) gives us
+\begin{equation*}
+	\mathbb E\Bigg[\Big(\int^t_0 H_u\,dB_u\Big)^2\Bigg] = \mathbb E\Bigg[\int^t_0 H^2_u\,du\Bigg]
+\end{equation*}
+
+\vdots
+
+and we obtain $\langle I_{(\cdot)}(H) \rangle_t = \int^t_0 H_u^2\,du$ as desired.
+\end{proof}
+\end{theorem}
+
+For example, if we set $H = 1$ we have
+\begin{align*}
+	I_t(1) &= \int^t_0 1\,dB_u = B_t \quad \text{and} \\
+	\langle I_{(\cdot)}(1)\rangle_t &= \int^t_0 1^2\,du = t
+\end{align*}
+
+Showing us again that the quadratic variation of Brownian motion is equal to $t$.
+
+%% SUBSTECTION: ITOS LEMMA/DIFFERENTIATION RULE
+\subsection{It\^{o}'s Lemma/Differentiation Rule}
+
+The usual chain rule from Calculus gives us
+\begin{equation*}
+	\frac{d}{dt}f(g(t)) = \frac{d}{dg}f(g(t))\frac{d}{dt}g(t) \equiv f'(g(t))\cdot g'(t)
+\end{equation*}
+
+\indent However, if we substitute our Brownian motion $g(t) = B(t)$ then we are faced with the dilemma that $\frac{d}{dt}(B(t))$ doesn't exist. In integral form the chain rule is formulated as
+\begin{equation*}
+	f(B(t)) = f(B(0)) + \int^t_0 f'(B(u))\,dB(u)
+\end{equation*}
+
+But we have seen that, taking $f(x) = x^2$,
+\begin{align*}
+	x^2 &= 0 + \int^x_0 (u^2)'\,du = 2\int^t_0 u\,du \quad \text{but,} \\
+	B(t)^2 &\neq B(0)^2 + \int^x_0 [B(u)^2]'\,dB(u) = 2\int^2_0 B(u)\,dB(u)
+\end{align*}
+
+Since we proved that
+\begin{align*}
+	\int^t_0 B(u)\,dB(u) &= \frac{1}{2}B(u)^2 + \frac{t}{2} \\
+	\iff B(t)^2 &= t + \int^t_0 2B(u)\,dB(u)
+\end{align*}
+
+So clearly we require some correction term in our stochastic generalization to the chain rule.
+
+%% THEOREM: ITOS RULE
+\begin{theorem}{It\^{o}'s Rule} Suppose $f:\mathbb R\rightarrow \mathbb R$ is twice differentiable and that $f'$ and $f''$ are continuous. Then, for Brownian Motion $B(t)$ we have
+
+\begin{equation*}
+	f(B(t)) = f(B(0)) + \int^t_0f'(B(u))\,dB(u) + \frac{1}{2}\int^t_0 f''(B(u))du
+\end{equation*}
+
+\underline{Example}: Consider $f(x) = x^2$. Computing our derivatives,
+\begin{equation*}
+	f(x) = x^2  \quad f'(x) = 2x  \quad f''(x) = 2
+\end{equation*}
+
+So, 
+\begin{align*}
+	B(t)^2 &= 0 + \int^t_0 2B(u)\,dB(u) + \frac{1}{2}\int^t_02\,du \\
+	&= 2\int^t_0 2B(u)\,dB(u) + t \\
+	&= 2(\frac{1}{2} B(t)^2 - \frac{t}{2}) + t \\
+	&= B(t)^2
+\end{align*}
+
+\begin{proof} {\em (Sketch of proof).} By Taylor's theorem we have, for $f$ twice differentiable,
+\begin{equation*}
+	f(b) = f(a) + f'(a)(b-a) + \frac{1}{2}f''(\gamma)(b-a)^2
+\end{equation*}
+
+for some $\gamma \in (a,b)$, and if our time partition $\pi = \{0 = t_0 < t_1 < \cdots < t_n = t\}$, then
+\begin{equation*}
+	f(B_{t_{i+1}}) - f(B_{t_i}) = f'(B_{t_i})(B_{t_{i+1}} - B_{t_i}) + \frac{1}{2}f''(\gamma)(B_{t_{i+1}} - B_{t_i})^2
+\end{equation*}
+for some $\gamma \in (B_{t_i},B_{t_{i+1}})$. So,
+
+\begin{equation*}
+	f(B_t) - f(B_{t_0}) = \sum^{n-1}_{i=0}f'(B_{t_i})(B_{t_{i+1}} - B_{t_i})  + \frac{1}{2}\sum^{n-1}_{i=0}f''(\gamma)(B_{t_{i+1}} - B_{t_i})^2
+\end{equation*}
+
+\indent Note that the second sum would be 0 if the quadratic variation was 0. However, since we are dealing with Brownian Motion this not necessarily so. We consider the limit of $|\pi|\longrightarrow 0$, so
+\begin{align*}
+	\sum^{n-1}_{i=0}f'(\gamma)(B_{t_{i+1}} - B_{t_i}) &\longrightarrow \int^t_0f'(B_u)\,dB_u \\
+	\frac{1}{2}\sum^{n-1}_{i=0}f''(\gamma)(B_{t_{i+1}} - B_{t_i})^2 &\longrightarrow  \frac{1}{2}\int^t_0 f''(B_u)\,d\langle B\rangle_u = \frac{1}{2}\int^t_0 f''(B_u)\,du
+\end{align*}
+Where we have claimed earlier that $\langle B\rangle_t = t$ so $d\langle B\rangle_t = dt$, hence
+\begin{align*}
+	f(B_t) - f(B_{t_0}) &= \int^t_0 f'(B_0)\,dB_u + \frac{1}{2}\int^t_0 f''(B_u)\,du \\
+	\iff f(B_t) &= f(B_{t_0}) + \int^t_0 f'(B_0)\,dB_u + \frac{1}{2}\int^t_0 f''(B_u)\,du
+\end{align*}
+
+as desired.
+\end{proof}
+\end{theorem}
+
+%% THEOREM: ITOS RULE IN TWO VARIABLES
+\begin{theorem}{It\^{o}'s Rule in Two Variables} If $f:[0,\infty)\times\mathbb R \rightarrow \mathbb R$ (we may think of $t,x$ as time and space variables) with continuous partial derivatives
+\begin{equation*}
+	\frac{\partial}{\partial t}f(t,x) \quad \frac{\partial}{\partial x}f(t,x) \quad \frac{\partial^2}{\partial x^2} f(t,x)
+\end{equation*}
+
+(i.e $f \in \mathcal C^{1,2}$) then
+\begin{equation*}
+	f(t,B_t) = f(0,B_0) + \int^t_0 \frac{\partial}{\partial u} f(u, B_u) du + \int^t_0\frac{\partial}{\partial x} f(u, B_u)\,dB_u + \frac{1}{2} \int^t_0\frac{\partial^2}{\partial x^2} f(u, B_u)\,du
+\end{equation*}
+\end{theorem}
+
+{\bf Example:} Take $f(t,x) = \frac{1}{2}x^2 - \frac{t}{2}$. Then,
+\begin{equation*}
+	f_t = -\frac{1}{2} \quad f_x = x \quad f_{xx} = 1
+\end{equation*}
+
+By It\^{o}'s Rule we have
+\begin{align*}
+	\frac{1}{2}B^2_t - \frac{t}{2} &= 0 + \int^t_0\Big(-\frac{1}{2}\Big)\,du + \int^t_0 B_u\,dB_u + \frac{1}{2}\int^t_0\Big(1\Big)\,du \\
+	&= -\frac{t}{2} + \int^t_0 B_u\,dB_u + \frac{t}{2} \\
+	&=  \int^t_0 B_u\,dB_u \\
+	&= \frac{1}{2}B^2_t - \frac{t}{2}
+\end{align*}
+
+%% SUBSECTION: SOME FINANCE EXAMPLES
+\subsection{Some Finance Example}
+
+Say we have
+\begin{equation*}
+	f(t,x) = S_0e^{(\mu - \frac{1}{2}\sigma^2)t + \sigma x}
+\end{equation*}
+
+Apply It\^{o}'s Rule,
+\begin{equation*}
+	S_t = f(t,B_t) = f(0, B_0) + \int^t_0f_u(u,B_u)\,du + \int^t_0f_x(u,B_u)\,dB_u + \frac{1}{2} \int^t_0f_{xx}(u,B_u)\,du
+\end{equation*}
+
+and noting that
+\begin{equation*}
+	f_t(t,x) = f(t,x)(\mu - \frac{1}{2}\sigma^2) \quad f_x(t,x) = f(t,x)\sigma \quad f_{xx}(t,x) = f(t,x)\sigma^2
+\end{equation*}
+
+we get
+\begin{align*}
+	S_t &= S_0 + \int^t_0f(u,B_u)(\mu -\frac{1}{2}\sigma^2)\,du + \int^t_0 f(u,B_u)\sigma\,dB_u + \frac{1}{2} \int^t_0f(u,B_u)\sigma^2\,du \\
+	&= S_0 + \int^t_0f(u,B_u)\mu\,du - \int^t_0f(u,B_u)\frac{1}{2}\sigma^2\,du  + \int^t_0 f(u,B_u)\sigma\,dB_u + \frac{1}{2} \int^t_0f(u,B_u)\sigma^2\,du \\
+	&= S_0 + \int^t_0f(u,B_u)\mu\,du + \int^t_0 f(u,B_u)\sigma\,dB_u
+\end{align*}
+
+but $f(u,B_u)$ is just $S_u$ so
+\begin{align*}
+	S_t &= S_0 + \int^t_0S_u\mu\,du + \int^t_0S_u\sigma\,dB_u \\
+	&= S_0 + \mu\int^t_0S_u\,du + \sigma\int^t_0S_u\,dB_u
+\end{align*}
+
+We sometimes choose to put it into differential form
+\begin{equation*}
+	dS_t = \mu S_t\,dt + \sigma S_t\,dB_t
+\end{equation*}
+
+or equivalently the differential equation
+\begin{equation*}
+ 	\frac{dS_t}{S_t} = \mu\,dt + \sigma\,dB_t
+\end{equation*}
+
+%% SUBSECTION: STOCHASTIC DIFFERENTIAL EQUATIONS
+\subsection{Stochastic Differential Equations}
+
+\indent The previous equation is an example of a \underline{stochastic differential equation} (SDE). The (a?) solution to this SDE is
+\begin{equation*}
+	S_t = S_0 e^{(\mu - \frac{1}{2}\sigma^2)t + \sigma B_t}
+\end{equation*}
+
+We say that
+\begin{equation*}
+	S_t = S_0 + \mu\int^t_0S_u\,du + \sigma\int^t_0S_u\,dB_u
+\end{equation*}
+
+is the ``Black-Scholes'' SDE. Recall that in an ODE we have
+\begin{equation*}
+	\frac{dy(t)}{dt} = f(t,y(t))
+\end{equation*}
+
+which has integral form
+\begin{equation*}
+	y(t) = y(0) + \int^t_0f(u,y(u))\,du
+\end{equation*}
+
+%% SUBSUBSECTION: EXISTENCE AND UNIQUENESS
+\subsubsection{Existence \& Uniqueness}
+
+We will show the conditions for a solution to exist given a SDE.
+
+\begin{definition} Suppose $(\Omega, \mathcal F, \mathbb P)$ is a probability space with filtration $(B_t)_{t\geq0}$ (standard Brownian Motion) with respect to $(\mathcal F_t)_{t\geq0}$. Then, an \underline{It\^{o} process} $X_t$ is a stochastic process of the form
+
+\begin{equation*}
+	X_t = X_0 + \int^t_0 K_s\,ds + \int^t_0 H_s\,dB_s
+\end{equation*}
+
+where
+\begin{enumerate}
+	\item $X_0 \in \mathcal F_0$
+	\item $K, H$ are adapted to $\mathcal F_t$ 
+	\item $\int^T_0|K_s|\,ds < \infty$ and $\int^T_0|H_s|\,dB_s < \infty$ a.s.
+\end{enumerate}
+\end{definition}
+
+\indent We want to show a general result for some arbitrary $X_t$ satisfying these properties, not just a Brownian Motion.
+
+\begin{proposition} Suppose an It\^{o} process $X$ can be written as
+	\begin{align*}
+		X_t &= X_0 + \int^t_0 K_s\,ds + \int^t_0 H_s\,dB_s \\
+		X_t^* &= X_0^* + \int^t_0 K_s^*\,ds + \int^t_0 H_s^*\,dB_s
+	\end{align*}
+Then
+	\begin{align*}
+		X_0 &= X_0^* \quad \text{$\mathbb P$ a.s.} \\
+		H_s &= H_s^* \quad \text{$d\lambda\times d\mathbb P$ a.s.\footnotemark} \\
+		K_u &= K_s^* \quad \text{$d\lambda\times d\mathbb P$ a.s.}
+	\end{align*}
+\footnotetext{Where $\lambda$ is the Lebesgue measure.} In particular if $X$ is a martingale then $K = 0$.
+\end{proposition}
+\begin{proof} Proof omitted
+\end{proof}
+
+\begin{proposition} Consider a partition $\pi$, then we can show that
+\begin{equation*}
+	\lim_{|\pi|\to0} \sum^{n-1}_{i=0}(X_{t_{i+1}} - X_{t_i})^2 = \int^t_0 |H_s|^2\,ds
+\end{equation*}
+That is, the quadratic variation of an It\^{o} process, $\langle X_t\rangle = \langle\int^{(\cdot)}_0 H_s\,dB_s\rangle_t = \int^t_0 H^2_s\,du$.
+\end{proposition}
+
+%% THEOREM: EXISTENCE
+\begin{theorem}{Existence} Suppose $X_t$ is an It\^{o} process satisfying
+\begin{equation*}
+	dX_t = K_t\,dt + H_t\,dB_t
+\end{equation*}
+
+and that $f \in \mathcal C^{1,2}$. Then,
+\begin{equation*}
+	f(t,X_t) = f(0,X_0) + \int^t_0f_u(u,X_u)\,du + \int^t_0 f_x(u,X_u)\,dX_u + \frac{1}{2} \int^t_0 f_{xx}(u,X_u)\,d\langle X\rangle_u 
+\end{equation*}
+
+Note that 
+\begin{align*}
+	d\langle X\rangle_t &= H^2_t\,dt \quad \text{since we have} \\
+	\langle X_t\rangle &= \int^t_0 H^2_s\,du
+\end{align*}
+
+So
+\begin{equation*}
+	f(t,X_t) = f(0,X_0) + \int^t_0f_u(u,X_u)\,du  + \int^t_0 f_x(u,X_u)\big[K_u\,du + H_u\,dB_u\big] + \frac{1}{2}\int^t_0 f_{xx}(u,X_u)\big[H^2_u\,du\big]
+\end{equation*}
+
+More generally, a SDE in differential form
+\begin{equation*}
+	dX_t = f(t,X_t)\,dt + \sigma(t,X_t)\,dB_t
+\end{equation*}
+
+with initial condition $x_0 = \xi$, is defined if the integrals
+\begin{equation*}
+	\int^t_0f(u,X_u)\,du \quad \text{and} \quad \int^t_0 \sigma(u,X_u)\,dB_u
+\end{equation*}
+
+``make sense''. We write\footnote{Note that the integral form of a differential equation ``actually means something'' unlike the differential form.}
+\begin{equation*}
+	X_t = \xi + \int^t_0f(u,X_u)du + \int^t_0\sigma(u,X_u)\,dB_u
+\end{equation*}
+\end{theorem}
+
+%% THEOREM: UNIQUENESS
+\begin{theorem}{Uniqueness} If 
+\begin{equation*}
+	|f(t,x) - f(t,x')| + |\sigma(t,x) - \sigma(t,x')| \leq k|x-x'|
+\end{equation*}
+
+and
+\begin{equation*}
+	|f(t,x)|^2 + |\sigma(t,x)|^2 \leq k^2_0(1 + |x|)^2
+\end{equation*}
+
+then there exists a unique solution to the SDE
+\begin{equation*}
+	X_t = \xi + \int^t_0f(u,X_u)du + \int^t_0\sigma(u,X_u)\,dB_u
+\end{equation*}
+
+with initial condition $x_0 = \xi$, such that $\exists\,c\in\mathbb R$
+\begin{equation*}
+	\mathbb E\big[\sup_{0\leq t\leq T} |X_t|^2\big] < c\Big(1 + \mathbb E\big[|\xi|^2\big]\Big)
+\end{equation*}
+
+\begin{proof} ``The proof is similar to Picard approximation done for existence and uniqueness in ODEs''
+\end{proof}
+\end{theorem}
+
+
+
+
+
+\end{section}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

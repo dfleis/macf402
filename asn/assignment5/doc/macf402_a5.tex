@@ -1,0 +1,842 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=0.75in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools,dsfont}
+\usepackage{enumerate} 
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+
+%%======%%
+% All this is to force LaTeX to prefix "Appendix" before a new appendix section letter
+\makeatletter
+% The "\@seccntformat" command is an auxiliary command
+% (see pp. 26f. of 'The LaTeX Companion,' 2nd. ed.)
+\def\@seccntformat#1{\@ifundefined{#1@cntformat}%
+   {\csname the#1\endcsname\quad}  % default
+   {\csname #1@cntformat\endcsname}% enable individual control
+}
+\let\oldappendix\appendix %% save current definition of \appendix
+\renewcommand\appendix{%
+    \oldappendix
+    \newcommand{\section@cntformat}{\appendixname~\thesection\quad}
+}
+\makeatother
+%%======%%
+
+%%======%%
+% Define for code section
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=C++,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\scriptsize\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+%%======%%
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+
+%% column vector
+\newcount\colveccount % column vector \colvec{# entries}{x1}{x2}...{xn}
+\newcommand*\colvec[1]{
+        \global\colveccount#1
+        \begin{pmatrix}
+        \colvecnext
+}
+\def\colvecnext#1{
+        #1
+        \global\advance\colveccount-1
+        \ifnum\colveccount>0
+                \\
+                \expandafter\colvecnext
+        \else
+                \end{pmatrix}
+        \fi
+}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Assignment 5}
+\author{David Fleischer\\ 
+MACF 402 - Mathematical \& Computational Finance II}
+ 
+\maketitle
+
+%========== Q1 ===========%
+
+{\bf\large Question 1} \\
+
+%========== Q1A ===========%
+
+{\bf Question 1 (a)}: By expanding $y \left(\Delta(m + 1) \right)$ as a Taylor series about the point $(\Delta m)$ verify the Taylor series expansion 
+\begin{equation*}
+	\delta^+y_m = \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2 y^{''} (\Delta m) + \cdots
+\end{equation*}
+
+What are the assumptions? \\
+
+{\bf Solution 1 (a)}: If $y$ has a continuous derivative up to order $k$ on the interval $[\Delta m, \Delta(m + 1)]$ and $y^{(k + 1)}$ exists on $(\Delta m, \Delta(m + 1))$ then, by Taylor's theorem, the expansion of $y(\Delta(m + 1))$ at point $(\Delta m)$ is
+\begin{align*}
+	y(\Delta(m + 1)) &= y(\Delta m) + (\Delta(m + 1) - \Delta m)y'(\Delta m) + \frac{1}{2}(\Delta(m + 1) - \Delta m)^2y''(\Delta m) + \cdots + \\
+	&\hphantom{{}={------}} \frac{1}{k!}(\Delta(m + 1) - \Delta m)^ky^{(k)}(\Delta m) + \frac{1}{(k + 1)!}(\Delta(m + 1) - \Delta m)^{k + 1}y^{(k + 1)}(\xi)
+\end{align*}
+
+for $\xi \in (\Delta m, \Delta(m + 1))$. Note that
+\begin{equation*}
+	\Delta(m + 1) - \Delta m = \Delta m + \Delta - \Delta m = \Delta
+\end{equation*}
+
+Hence
+\begin{equation*}
+	y(\Delta(m + 1)) = y(\Delta m) + \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots + \frac{1}{k!}(\Delta)^ky^{(k)}(\Delta m)  + \frac{1}{(k + 1)!}(\Delta)^{k + 1}y^{(k + 1)}(\xi)
+\end{equation*}
+
+So,
+\begin{align*}
+	y(\Delta(m + 1)) - y(\Delta m) &=  \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots + \frac{1}{k!}(\Delta)^ky^{(k)}(\Delta m)  + \frac{1}{(k + 1)!}(\Delta)^{k + 1}y^{(k + 1)}(\xi) \\
+	\iff \delta^+y_m &=  \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots + \frac{1}{k!}(\Delta)^ky^{(k)}(\Delta m)  + \frac{1}{(k + 1)!}(\Delta)^{k + 1}y^{(k + 1)}(\xi)
+\end{align*}
+
+\indent Now, if we assume that $y$ is infinitely differentiable then we may write the expansion of $y(\Delta(m + 1))$ at $(\Delta m)$ as
+\begin{align*}
+	y(\Delta(m + 1)) &=  y(\Delta m) + \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots \\
+	\iff y(\Delta(m + 1)) - y(\Delta m) &=  \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots \\
+	\iff \delta^+y_m &=  \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots 
+\end{align*}
+
+as desired. \\
+
+%========== Q1B ===========%
+
+{\bf Question 1 (b)}: Use Taylor's theorem to show that
+\begin{equation*}
+	\delta^+y_m = \Delta y'(z_m)
+\end{equation*}
+
+for some point $z_m \in \left( \Delta m, \Delta (m + 1) \right)$ \\
+
+{\bf Solution 1 (b)}: Define $\alpha$ to satisfy 
+\begin{equation*}
+	y(\Delta(m + 1)) = y(\Delta m) + (\Delta(m + 1) - \Delta m)\alpha
+\end{equation*}
+
+and consider
+\begin{equation*}
+	Y(x) = y(\Delta(m + 1)) - y(x) - (\Delta(m + 1) - x)\alpha
+\end{equation*}
+
+We see that $Y$ is continuous on $[\Delta m, \Delta(m + 1)]$ and differentiable on $(\Delta m, \Delta(m + 1))$, and note
+\begin{align*}
+	Y(\Delta (m + 1)) &= y(\Delta(m + 1) - y(\Delta(m + 1)) - (\Delta(m + 1) - \Delta(m + 1))\alpha \\
+	&= y(\Delta(m + 1) - y(\Delta (m + 1)) - 0 = 0 \\
+	Y(\Delta m) &= y(\Delta(m + 1)) - y(\Delta m) - (\Delta(m + 1) - \Delta m)\alpha \\
+	&= y(\Delta(m + 1)) - y(\Delta(m + 1)) = 0
+\end{align*}
+
+\indent Therefore, by the Mean Value Theorem, we are guaranteed the existence of some $z_m \in (\Delta m, \Delta(m + 1))$ such that
+\begin{equation*}
+	Y'(z_m) = 0 
+\end{equation*}
+
+Now, computing $Y'$, we have
+\begin{align*}
+	Y'(x) &= \frac{d}{dx} \Big[ y(\Delta(m + 1)) - y(x) - (\Delta(m + 1) - x)\alpha \Big] \\
+	&= -y'(x) + \alpha
+\end{align*}
+
+Hence
+\begin{align*}
+	Y'(z_m) = 0 \implies -y'(z_m) + \alpha &= 0 \\
+	\implies y'(z_m) &= \alpha
+\end{align*}
+
+So, we are guaranteed the existence of some point $z_m \in (\Delta m, \Delta(m + 1))$ such that
+\begin{align*}
+	y(\Delta(m + 1)) &= y(\Delta m) + (\Delta(m + 1) - \Delta m)y'(z_m) \\
+	&= y(\Delta m) + \Delta y'(z_m) \\
+	\iff \delta^+y_m &= \Delta y'(z_m)
+\end{align*}
+
+as desired.
+
+%========== Q2 ===========%
+\newpage
+{\bf\large Question 2} \\
+
+%========== Q2A ===========%
+{\bf Question 2 (a)}: Verify the Taylor series expansion
+\begin{equation*}
+	\delta^-y_m = \Delta y'(\Delta m) - \frac{1}{2}\Delta^2 y^{''}(\Delta m) + \cdots
+\end{equation*}
+
+{\bf Solution 2 (a)}: By Taylor's theorem, the expansion of $y(\Delta (m - 1))$ at point $(\Delta m)$ is
+\begin{align*}
+	y(\Delta (m - 1)) &= y(\Delta m) + (\Delta (m - 1) - \Delta m)y'(\Delta m) + \frac{1}{2}(\Delta (m - 1) - \Delta m)^2y''(\Delta m) + \cdots + \\
+	&\hphantom{{}={-------}} \frac{1}{k!}(\Delta m - \Delta m)^ky^{(k)}(\Delta m) + \frac{1}{(k + 1)!}(\Delta (m - 1) - m)^{k + 1}y^{(k + 1)}(\xi)
+\end{align*}
+
+for $\xi \in (\Delta (m - 1), \Delta m)$. Note that
+\begin{equation*}
+	\Delta (m - 1) - \Delta m = \Delta m - \Delta + \Delta m = -\Delta
+\end{equation*}
+
+Hence
+\begin{align*}
+	y(\Delta(m - 1)) &= y(\Delta m) - \Delta y'(\Delta m) + \frac{1}{2}(-\Delta)^2y''(\Delta m) - \cdots + \\
+	&\hphantom{{}={---------------}} \frac{1}{k!}(-\Delta)^ky^{(k)}(\Delta m)  + \frac{1}{(k + 1)!}(-\Delta)^{k + 1}y^{(k + 1)}(\xi) \\
+	&= y(\Delta m) - \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) - \cdots + \\
+	&\hphantom{{}={---------------}} \frac{(-1)^{k}}{k!}(\Delta)^ky^{(k)}(\Delta m)  + \frac{(-1)^{k + 1}}{(k + 1)!}(\Delta)^{k + 1}y^{(k + 1)}(\xi)
+\end{align*}
+
+So,
+\begin{align*}
+	y(\Delta (m - 1)) - y(\Delta m) &= - \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) - \cdots + \\
+	&\hphantom{{}={------------}} \frac{(-1)^{k}}{k!}(\Delta)^ky^{(k)}(\Delta m)  + \frac{(-1)^{k + 1}}{(k + 1)!}(\Delta)^{k + 1}y^{(k + 1)}(\xi) \\
+	y(\Delta m) - y(\Delta (m - 1)) &= \Delta y'(\Delta m) - \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots + \\
+	&\hphantom{{}={-----------}} \frac{(-1)^{k + 1}}{k!}(\Delta)^ky^{(k)}(\Delta m)  + \frac{(-1)^{k + 2}}{(k + 1)!}(\Delta)^{k + 1}y^{(k + 1)}(\xi) \\
+	\iff \delta^-y_m &= \Delta y'(\Delta m) - \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots + \\
+	&\hphantom{{}={-----------}} \frac{(-1)^{k + 1}}{k!}(\Delta)^ky^{(k)}(\Delta m)  + \frac{(-1)^{k + 2}}{(k + 1)!}(\Delta)^{k + 1}y^{(k + 1)}(\xi) \\
+\end{align*}
+
+\indent Now, if we assume that $y$ is infinitely differentiable then we may write the expansion of $y(\Delta(m + 1))$ at $(\Delta m)$ as
+\begin{align*}
+	y(\Delta(m - 1)) &=  y(\Delta m) - \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots \\
+	y(\Delta m) - y(\Delta (m - 1)) &=  \Delta y'(\Delta m) - \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots \\
+	\iff \delta^+y_m &=  \Delta y'(\Delta m) - \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots 
+\end{align*}
+
+as desired. \\
+
+%========== Q2B ===========%
+
+{\bf Question 2 (b)}: Show that
+\begin{equation*}
+	\delta^-y_m = \Delta y'(z_m)
+\end{equation*}
+
+for some point $z_m \in \left(\Delta (m - 1), \Delta m \right)$. \\
+
+{\bf Solution 2 (b)}: Define $\alpha$ to satisfy 
+\begin{equation*}
+	y(\Delta(m - 1)) = y(\Delta m) + (\Delta(m - 1) - \Delta m)\alpha
+\end{equation*}
+
+and consider
+\begin{equation*}
+	Y(x) = y(\Delta(m - 1)) - y(x) - (\Delta(m - 1) - x)\alpha
+\end{equation*}
+
+We see that $Y$ is continuous on $[\Delta (m - 1), \Delta m]$ and differentiable on $(\Delta (m - 1), \Delta m)$, and note
+\begin{align*}
+	Y(\Delta (m - 1)) &= y(\Delta(m - 1) - y(\Delta(m - 1)) - (\Delta(m - 1) - \Delta(m - 1))\alpha \\
+	&= y(\Delta(m - 1) - y(\Delta (m - 1)) - 0 = 0 \\
+	Y(\Delta m) &= y(\Delta(m - 1)) - y(\Delta m) - (\Delta(m - 1) - \Delta m)\alpha \\
+	&= y(\Delta(m - 1)) - y(\Delta(m - 1)) = 0
+\end{align*}
+
+\indent Therefore, by the Mean Value Theorem, we are guaranteed the existence of some $z_m \in (\Delta (m - 1), \Delta m)$ such that
+\begin{equation*}
+	Y'(z_m) = 0 
+\end{equation*}
+
+Now, computing $Y'$, we have
+\begin{align*}
+	Y'(x) &= \frac{d}{dx} \Big[ y(\Delta(m - 1)) - y(x) - (\Delta(m - 1) - x)\alpha \Big] \\
+	&= -y'(x) + \alpha
+\end{align*}
+
+Hence
+\begin{align*}
+	Y'(z_m) = 0 \implies -y'(z_m) + \alpha &= 0 \\
+	\implies y'(z_m) &= \alpha
+\end{align*}
+
+So, we are guaranteed the existence of some point $z_m \in (\Delta m, \Delta(m + 1))$ such that
+\begin{align*}
+	y(\Delta(m - 1)) &= y(\Delta m) + (\Delta(m - 1) - \Delta m)y'(z_m) \\
+	&= y(\Delta m) - \Delta y'(z_m) \\
+	\iff	 y(\Delta(m - 1)) - y(\Delta m) &= - \Delta y'(z_m) \\
+	\iff \delta^+y_m &= \Delta y'(z_m)
+\end{align*}
+
+as desired.
+
+
+%========== Q3 ===========%
+
+\newpage
+{\bf\large Question 3} \\
+
+%========== Q3A ===========%
+
+{\bf Question 3 (a)}: Give a Taylor series for $\delta^2 y_m$. \\
+
+{\bf Solution 3 (a)}: We have
+\begin{equation*}
+	\delta^2y_m = y_{m + 1} - 2y_m + y_{m - 1} = y_{m + 1} - y_m - (y_m - y_{m - 1}) = \delta^+y_m - \delta^-y_m
+\end{equation*}
+
+So, from parts (1)-(2) we get
+\begin{align*}
+	\delta^2y_m &= \delta^+y_m - \delta^-y_m  \\
+	&= \Big[ \Delta y'(\Delta m) + \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots \Big] - \Big[ \Delta y'(\Delta m) - \frac{1}{2}(\Delta)^2y''(\Delta m) + \cdots \Big] \\
+	&= (\Delta)^2y''(\Delta m) + \frac{2}{4!}(\Delta)^4 y^{(4)}(\Delta m) + \cdots \\
+	&= (\Delta)^2y''(\Delta m) + \frac{1}{12}(\Delta)^4 y^{(4)}(\Delta m) + \cdots
+\end{align*}
+
+as desired. \\
+
+%========== Q3B ===========%
+
+{\bf Question 3 (b)}: Similar to part (b) of Questions 1 and 2 show that the error of the second order central difference is proportional to $\Delta^2$. \\
+
+{\bf Solution 3 (b)}: From (1)-(2) we have the first order Taylor expansions of $y(\Delta(m + 1))$ and $y(\Delta(m - 1))$ at point $(\Delta m)$
+\begin{align*}
+	y(\Delta(m + 1)) &= y(\Delta m) + \Delta y'(\xi_1) \\
+	y(\Delta(m - 1)) &= y(\Delta m) - \Delta y'(\xi_2) 
+\end{align*}
+
+for $\xi_1 \in (\Delta m, \Delta(m + 1))$ and $\xi_2 \in (\Delta(m - 1), \Delta m)$. Adding the two equations we get
+\begin{align*}
+	y(\Delta(m + 1)) + y(\Delta(m - 1)) &= 2y(\Delta m) + \Delta \Big[ y'(\xi_1) - y'(\xi_2) \Big] \\
+	y(\Delta(m + 1)) - 2y(\Delta m) + y(\Delta(m - 1)) &=  \Delta \Big[ y'(\xi_1) - y'(\xi_2) \Big]
+\end{align*}
+
+\indent Since $y''$ is continuous on the interval $[\Delta(m - 1), \Delta(m + 1)]$ we may use the intermediate value theorem to guarantee the existence of some $z_m \in (\Delta(m - 1), \Delta(m + 1))$ such that
+\begin{equation*}
+	\frac{y'(\xi_1) + y'(\xi_2)}{2} = y'(z_m)
+\end{equation*}
+
+Hence
+\begin{align*}
+	y(\Delta(m + 1)) - 2y(\Delta m) + y(\Delta(m - 1)) &=  \Delta y'(z_m) \\
+	\iff \delta^2 y_m &= \Delta y'(z_m)
+\end{align*}
+
+as desired. \\
+
+%========== Q3C ===========%
+
+{\bf Question 3 (c)}: Show that $\delta^+\delta^- = \delta^2$. \\
+
+{\bf Solution 3 (c)}: From the definition of the backwards operator, $\delta^-y_m$, we have
+\begin{align*}
+	\delta^-y_m = y_m - y_{m - 1}
+\end{align*}
+
+Hence
+\begin{align*}
+	\delta^+ \big( \delta^-y_m \big) &= 	\delta^+ \big( y_m - y_{m - 1} \big) \\
+	&= \delta^+ y_m - \delta^+ y_{m - 1} \\
+	&= \big( y_{m + 1} - y_m \big) - \big( y_{m} - y_{m - 1} \big) \\
+	&= y_{m + 1} - 2y_m + y_{m - 1} \\
+	&= \delta^2y_m
+\end{align*}
+
+as desired. \\
+
+%========== Q4 ===========%
+
+\newpage
+{\bf\large Question 4} \\
+
+{\bf Question 4 (a)}: Verify that the BTCS algorithm may be written in the form
+\begin{equation*}
+	{\bf B}\vec{U}^{n + 1} = \vec{U}^n + \vec{q}^n
+\end{equation*}
+
+for $0 \leq n \leq N - 1$, a suitable $(J - 1) \times (J - 1)$ matrix ${\bf B}$ and a suitable $(J - 1) \times 1$ vector $\vec{q}^n$ (in terms of the boundary conditions in the $x$ coordinate). Specify the initial condition $\vec{U}^0$ in terms of the initial condition of the time coordinate $u(x,0)$. \\
+
+{\bf Solution 4 (a)}: Under the BTCS algorithm we approximate $\frac{\partial u}{\partial t}$ at some point $(x_j, t_{n + 1})$ by
+\begin{equation*}
+	\partial_t u^{n + 1}_j \approx \frac{u^{n + 1}_j - u^n_j}{\Delta t} 
+\end{equation*}
+
+and approximate $\frac{\partial^2 u}{\partial x^2}$ at some point $(x_j, t_{n + 1})$ by
+\begin{equation*}
+	\partial^2_x u^{n}_j \approx \frac{u^n_{j + 1} - 2u^n_j + u^n_{j - 1}}{\Delta x} 
+\end{equation*}
+
+Then, the balance equations are
+\begin{align*}
+	\frac{U^{n + 1}_j - U^n_j}{\Delta t} &= \frac{U^{n + 1}_{j + 1} - 2U^{n + 1}_j + U^{n + 1}_{j - 1}}{(\Delta x)^2} \\
+\implies U^{n + 1}_j &= U^n_j + \nu \left( U^{n + 1}_{j + 1} - 2U^{n + 1}_j + U^{n + 1}_{j - 1} \right) \quad \text{with } \nu = \frac{\Delta t}{(\Delta x)^2} \\
+\implies U^n_j &= -\nu^{n + 1}_{j + 1} + (1 + 2\nu)U^{n + 1}_j - \nu U^{n + 1}_{j - 1}
+\end{align*}
+
+If we have the initial condition 
+\begin{equation*}
+	u(x, 0) = \lambda(x) \implies U^0_j = \lambda(x_j) \quad 0 \leq j < J \\
+\end{equation*}
+
+and boundary conditions
+\begin{align*}
+	U^n_0 &= \alpha(n\Delta t) \quad 0 < n \leq N \\
+	U^n_J &= \beta(n\Delta t) \quad 0 < n \leq N
+\end{align*}
+
+Then we may write this iterative process in matrix form as
+\begin{equation*}
+	\begin{bmatrix}
+		U^n_1 \\
+		\vdots \\
+		U^n_j \\
+		\vdots \\
+		U^n_{J - 1}
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		(1 + 2\nu) & -\nu & 0 & \cdots & 0 & 0 \\
+		-\nu & (1 + 2\nu) & -\nu & \cdots & 0 & 0 \\
+		0 & -\nu & (1 + 2\nu) & \cdots & 0 & 0 \\
+		\vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\
+		0 & 0 & 0 & \cdots & -\nu & (1 + 2\nu) 
+	\end{bmatrix} \times
+	\begin{bmatrix}
+		U^{n + 1}_1 \\
+		\vdots \\
+		U^{n + 1}_j \\
+		\vdots \\
+		U^{n + 1}_{J - 1}
+	\end{bmatrix} - 
+	\begin{bmatrix}
+		\nu\alpha( (n + 1)\Delta t ) \\
+		0 \\ %\nu U^{n + 1}_{2} \\
+		\vdots \\
+		0 \\ %\nu U^{n + 1}_{J - 1} \\
+		\nu\beta( (n + 1)\Delta t )
+	\end{bmatrix}
+\end{equation*}
+
+
+Hence
+\begin{align*}
+	\vec{U}^n &= {\bf B} \vec{U}^{n + 1} - \vec{q}^n \\
+\implies {\bf B}\vec{U}^{n + 1} &= \vec{U}^n + \vec{q}^n
+\end{align*}
+
+for $0 \leq n \leq N - 1$, ${\bf B}$ a $(J - 1)\times(J - 1)$ matrix, and $\vec{q}^n$ a $(J - 1)\times 1$ vector. Finally, using our initial conditions specified above, we may express the vector of initial conditions $\vec{U}^0$ as
+\begin{equation*}
+	\vec{U}^0 = 
+	\begin{bmatrix}
+		\lambda(x_1) \\
+		\vdots \\
+		\lambda(x_j) \\
+		\vdots \\
+		\lambda(x_{J - 1})
+	\end{bmatrix}
+\end{equation*}
+
+%========== Q5 ===========%
+
+\newpage
+{\bf\large Question 5} \\
+
+%========== Q5A ===========%
+
+{\bf Question 5 (a)}: Investigate the performance of the FTCS algorithm relative to the Black-Scholes price for $J = 10, 30, 50, 70, 90, 110$. \\
+
+{\bf Solution 5 (a)}: For our implementation of the FTCS solution we use parameters $S_0 = 100, \sigma = 0.2, r = 0.03, T = 1$ with boundaries $S_{min} = 0, S_{max} = 300, t_{min} = 0, t_{max} = 1$. Figure \ref{fig:unstable} show us the result of choosing $N$ time steps too small to satisfy stability for a given value of $J$ space steps. We see that small errors propagate from the terminal condition (an initial condition in our transformed PDE) through the system to explode at the other boundary. \\
+
+\indent Plotting the maximum absolute error over a grid of possible time and space steps gives us Figure \ref{fig:max_abs_err}. We see that a boundary of stability forms along a boundary that is (at least impressionistically) proportional to $J^2$, which is precisely to be expected given the FTCS algorithm's requirement of $\frac{ \Delta t }{ (\Delta x)^2 } \leq \frac{1}{2}$. This proportionality is verified by fitting the model $\sqrt{\hat{N}} = \beta_0 + \beta_1 J$. Such a model was computed and the results are presented in Figure $\ref{fig:model}$. The coefficients of the fitted model are
+\begin{align*}
+	\beta_0 &= -1.83529 \\
+	\beta_1 &= 0.09124584
+\end{align*}
+
+and so we find that the fitted polynomial is 
+\begin{equation*}
+	\hat{N} = 0.0083258J^2 - 0.334925J + 3.36829
+\end{equation*}
+
+Thus, given this domain of $S$ and $t$, we find that the boundary of stability for $N$ is indeed proportional to $J^2$. \\
+
+\indent Looking at the region of stability more closely we also see in Figure $\ref{fig:max_abs_err}$ periodic behaviour in $J$ for the maximum error, as well as decreasing, with diminishing returns, error in increasing $J$. \\
+
+\begin{figure}[H]
+	\centering
+ 	\includegraphics[scale=0.43]{../plots/q5_J50_N10_ftcs.pdf}
+ 	\includegraphics[scale=0.43]{../plots/q5_J54_N10_ftcs.pdf}
+    	\includegraphics[scale=0.43]{../plots/q5_J70_N30_ftcs.pdf}
+    	\includegraphics[scale=0.43]{../plots/q5_J70_N100_ftcs.pdf}
+\caption{Some examples of unstable FTCS solutions to the Black-Scholes PDE.}
+\label{fig:unstable}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+ 	\includegraphics[scale=0.55]{../plots/q5_max_abs_err.pdf}
+ 	\includegraphics[scale=0.55]{../plots/q5_max_abs_err_trunc.pdf}
+\caption{Base 10 $\log$ of the max absolute error between the FTCS approximation and the Black-Scholes solution given $N$ time steps and $J$ space steps. Note the downwards periodic behaviour in $J$.}
+\label{fig:max_abs_err}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+ 	\includegraphics[scale=0.7]{../plots/q5_model.pdf}
+\caption{Values of the least $N$ time steps corresponding to stable solutions for a given $J$ number of space steps as well as the fitted linear model in $\sqrt{N}$.}
+\label{fig:model}
+\end{figure}
+
+
+%========== Q5B ===========%
+
+\newpage
+{\bf Question 5 (b)}: Produce surface plots of the approximate value of the European put as a function of the stock-price and time to maturity. \\
+
+% J in 10, 30, 50, 70, 90, 110
+{\bf Solution 5 (b)}: Presented in Figures \ref{fig:surfaces_a} and \ref{fig:surfaces_b} are the surfaces for $J = 10, 30, 50, 70, 90$ and 100 with the least $N$ to satisfy stability.
+
+\begin{figure}[H]
+	\centering
+ 	\includegraphics[scale=0.425]{../plots/q5_J10_N10_ftcs.pdf}
+	\includegraphics[scale=0.425]{../plots/q5_J30_N10_ftcs.pdf}
+	\includegraphics[scale=0.425]{../plots/q5_J50_N20_ftcs.pdf}
+	\includegraphics[scale=0.425]{../plots/q5_J70_N110_ftcs.pdf}
+\caption{Surface approximations of a European call option from the FTCS algorithm. The $N$ chosen for a given $J$ was the least $N$ such that the surfaces appeared stable.}
+\label{fig:surfaces_a}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.425]{../plots/q5_J90_N220_ftcs.pdf}
+	\includegraphics[scale=0.425]{../plots/q5_J110_N370_ftcs.pdf}
+\caption{More surface approximations of a European call option from the FTCS algorithm. The $N$ chosen for a given $J$ was the least $N$ such that the surfaces appeared stable.}
+\label{fig:surfaces_b}
+\end{figure}
+
+%========== Q6 ===========%
+
+\newpage
+{\bf\large Question 6} \\
+
+{\bf Solution 6 (preamble)}: We have lognormal dynamics for asset $S$, hence
+\begin{align*}
+	S_t &= S_0 e^{(\mu - \frac{\sigma^2}{2})t + \sigma \sqrt{t} Z} \quad Z \sim N(0, 1) \\
+	\implies \ln S_t &= \ln S_0 + \left( \mu - \frac{\sigma^2}{2} \right) t + \sigma \sqrt{t} Z \\
+	\implies \ln S_t - \ln S_0 - \left( \mu - \frac{\sigma^2}{2} \right) t &= \sigma \sqrt{t} Z \sim N \left(0, \sigma^2t \right)
+\end{align*}
+
+\indent For convenient application of the chain rule we let $X_t$ be the risk factor for the European call option such that
+\begin{equation*}
+	X_t = \ln S_t - \ln S_0 - \left( \mu - \frac{\sigma^2}{2} \right) t
+\end{equation*}
+
+and note
+\begin{align*}
+	\exp \left[ X_t + (\mu - \frac{\sigma^2}{2})t + \ln S_0 \right] &= \exp \left[ \ln S_t - \ln S_0 - \left( \mu - \frac{\sigma^2}{2} \right) t  + (\mu - \frac{\sigma^2}{2})t + \ln S_0 \right] \\
+	&= \exp \left[ \ln S_t \right] \\
+	&= S_t
+\end{align*}
+
+So, from the chain rule we get
+\begin{equation*}
+	V'(S_t) = \frac{\partial V}{\partial X_t} = \frac{\partial V}{\partial S_t}\frac{\partial S_t}{\partial X_t}
+\end{equation*}
+
+but for a European call option we have $\frac{\partial V}{\partial S_t} = \Phi(d_1)$ and
+\begin{align*}
+	\frac{\partial S_t}{\partial X_t} &= \frac{\partial}{\partial X_t} \exp \left[ X_t + (\mu - \frac{\sigma^2}{2})t + \ln S_0 \right] \\
+	&= \exp \left[ X_t + (\mu - \frac{\sigma^2}{2})t + \ln S_0 \right] \\
+	&\equiv S_t
+\end{align*}
+
+so
+\begin{equation*}
+	V'(S_t) = \Phi(d_1) S_t =: \delta_0
+\end{equation*}	
+	
+Then, for some increment in the value of a call option $\Delta V$ over time horizon $h$, we have
+\begin{equation*}
+	\Delta V = V_{t + h} - V_t \\
+\end{equation*}
+
+and from the first order Taylor approximation we find
+\begin{equation*}
+	\Delta V \approx V'(S_t) \Delta X_t = \delta_0 \Delta X_t = \delta_0 \left( X_{t + h} - X_t \right)
+\end{equation*}
+
+But $X_t \sim N \left(0, \sigma^2 t\right)$ so $X_{t + h} - X_t$ is some Brownian increment such that
+\begin{align*}
+	\Delta X_t &= X_{t + h} - X_t \sim N \left(0, \sigma^2 h\right) \\
+	\implies \Delta X_t &= \sigma \sqrt{h} Z 
+\end{align*}
+
+Therefore, over time horizon $h$ and $\delta_0 = \Phi(d_1)S_t$, we may approximate $\Delta V = V_{t + h} - V_t$ as
+\begin{equation*}
+	\Delta V \approx \delta_0\sigma\sqrt{h}Z
+\end{equation*}
+
+%========== Q6A ===========%
+
+{\bf Question 6 (a)}: a short position \\
+
+{\bf Solution 6 (a)}: From the preamble we have
+\begin{equation*}
+	\Delta V \approx \delta_0\sigma\sqrt{h}Z
+\end{equation*}
+
+Therefore, for some significance level $\alpha$ and corresponding value-at-risk $\text{VaR}_{1 - \alpha}$, we want a short position to satisfy
+\begin{align*}
+	1 - \alpha &= \P \left( \Delta V < \text{VaR}_{1 - \alpha} \right) \\
+	&\approx \P \left( \delta_0\sigma\sqrt{h}Z < \text{VaR}_{1 - \alpha} \right) \\
+	&= \P \left( Z < \frac{ \text{VaR}_{1 - \alpha} }{ \sigma\sqrt{h}\delta_0 } \right) \\
+	\implies \text{VaR}_{1 - \alpha} &= z_{1 - \alpha} \sigma \sqrt{h} \delta_0
+\end{align*}
+
+\indent So, for a short European call position, the 95\% VaR over a horizon of 5 days (given 365 days in a year) is
+\begin{equation*}
+	\text{VaR}_{1 - \alpha} = 1.645  \sigma \sqrt{ \frac{5}{365} } \delta_0
+\end{equation*}
+
+%========== Q6B ===========%
+
+{\bf Question 6 (b)}: a long position \\
+
+{\bf Solution 6 (b)}: From the preamble we have
+\begin{equation*}
+	\Delta V \approx \delta_0\sigma\sqrt{h}Z
+\end{equation*}
+
+Therefore, for some significance level $\alpha$ and corresponding value-at-risk $\text{VaR}_{1 - \alpha}$, we want a long position to satisfy
+\begin{align*}
+	1 - \alpha = \P \left( \Delta V > \text{VaR}_{1 - \alpha} \right) \iff \alpha &= \P \left( \Delta V < \text{VaR}_{1 - \alpha} \right) \\
+	&\approx \P \left( \delta_0\sigma\sqrt{h}Z < \text{VaR}_{1 - \alpha} \right) \\
+	&= \P \left( Z < \frac{ \text{VaR}_{1 - \alpha} }{ \sigma\sqrt{h}\delta_0 } \right) \\
+	\implies \text{VaR}_{1 - \alpha} &= z_{\alpha} \sigma \sqrt{h} \delta_0
+\end{align*}
+
+\indent So, for a long European call position, the 95\% VaR over a time horizon of 5 days (given  365 days in a year) is
+\begin{equation*}
+	\text{VaR}_{1 - \alpha} = -1.645  \sigma \sqrt{ \frac{5}{365} } \delta_0
+\end{equation*}
+
+%========== Q6C ===========%
+
+\newpage
+{\bf Question 6 (c)}: Let $S_0 = 100, K = 100, \mu = 0.02, \sigma = 0.5, T = 1$ and simulate the value of a long \& short portfolio with $N = 10^2, 10^4, 10^5, 10^6$. Calculate the number of times the 95\% VaR was broken. \\
+
+{\bf Solution 6 (c)}: 
+
+\begin{figure}[H]
+	\centering
+ 	\includegraphics[scale=0.65]{../plots/q6_varbreaks_all.pdf}
+	\includegraphics[scale=0.65]{../plots/q6_varbreaks_diff.pdf}
+\caption{VaR break proportions for a short \& long position in a European call. (Left) Average VaR break proportions and (right) Difference in break proportions as a function of $N$ simulations of the underlying asset (lognormal dynamics).}
+\label{fig:varbreaks}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+ 	\includegraphics[scale=0.80]{../plots/q6_varbreaks_ci.pdf}
+\caption{VaR break proportions with 95\% confidence intervals for a (left) short position and (right) long position in a European call as a function of $N$ simulations of the underlying asset (lognormal dynamics).}
+\label{fig:varbreaks_ci}
+\end{figure}
+
+\csvautolongtable[
+	table head=\caption{Short and long European call position 95\% VaR break proportions \& standard errors as a function of $N$ simulations of the underlying asset (lognormal dynamics).}
+	\label{tab:varbreaks}\\\hline
+               \csvlinetotablerow\\\hline
+               \endfirsthead\hline
+               \csvlinetotablerow\\\hline
+               \endhead\hline
+               \endfoot,
+               respect all
+               ]{../data/q6_dat_clean.csv}
+
+
+%========== Appendix ===========%
+\newpage
+\appendix
+\section{Transformation of the Black-Scholes PDE to the Heat Equation}
+\small
+
+\indent Let $V$ be the fair price of a European put option written on some risky asset $S$ with risk free rate $r$ and volatility $\sigma^2$. Then, it can be shown that $V$ satisfies the partial differential with respect to $V = V(S, t)$
+\begin{equation*}
+	\frac{\partial V}{\partial t} + \frac{\sigma^2}{2}S^2\frac{\partial V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV = 0
+\end{equation*}
+
+on the grid $S \in (0,\infty), t \in \times[0, T)$ in space and time, respectively. We have the terminal condition, for some strike price $K > 0$,
+\begin{equation*}
+	V(S, T) = \max (K - S, 0)
+\end{equation*} 
+
+and boundary conditions
+\begin{align*}
+	\lim_{S\to 0} V(S,t) &= Ke^{-r(T - t)} \\
+	\lim_{S\to\infty} V(S,t) &= 0
+\end{align*}
+
+We wish to transform this PDE to the canonical heat equation $\frac{\partial u}{\partial t} = \frac{\partial^2 u}{\partial x^2}$. We perform the substitutions
+\begin{align*}
+	S = e^x \iff& \log S = x \\
+	t = T - \frac{2\tau}{\sigma^2} \iff& \tau = \frac{\sigma^2}{2} (T - t)
+\end{align*}
+
+and let $V(S, t) = W(x, \tau) = W \left( \log S, \frac{\sigma^2}{2}(T - t) \right)$, then
+\begin{align*}
+	\frac{\partial V}{\partial t} &= \frac{\partial W}{\partial \tau}\frac{\partial \tau}{\partial t} = -\frac{\sigma^2}{2}\frac{\partial W}{\partial \tau} \\
+	\frac{\partial V}{\partial S} &= \frac{\partial W}{\partial x} \frac{\partial x}{\partial S} = \frac{1}{S}\frac{\partial W}{\partial x} \\
+	\frac{\partial^2 V}{\partial S^2} &= \frac{\partial}{\partial S} \left( \frac{1}{S} \frac{\partial W}{\partial x} \right) = \frac{1}{S^2}\frac{\partial^2 W}{\partial x^2} - \frac{1}{S^2}\frac{\partial W}{\partial x}
+\end{align*}
+
+Substituting these partial derivatives into our original PDE we get
+\begin{align*}
+	& \left[ -\frac{\sigma^2}{2}\frac{\partial W}{\partial \tau} \right] + \frac{\sigma^2}{2}S^2\left[ \frac{1}{S^2}\frac{\partial^2 W}{\partial x^2} - \frac{1}{S^2}\frac{\partial W}{\partial x} \right] + rS\left[ \frac{1}{S}\frac{\partial W}{\partial x} \right] - r\left[ W \right] = 0 \\
+	\iff& -\frac{\sigma^2}{2}\frac{\partial W}{\partial \tau} + \frac{\sigma^2}{2}\frac{\partial^2 W}{\partial x^2} - \frac{\sigma^2}{2}\frac{\partial W}{\partial x} + \frac{\partial W}{\partial x} - rW = 0 \\
+	\iff& -\frac{\partial W}{\partial \tau} + \frac{\partial^2 W}{\partial x^2} -\frac{\partial W}{\partial x} + \frac{2r}{\sigma^2}\frac{\partial W}{\partial x} - \frac{2r}{\sigma^2}W = 0 \\
+	\iff& -\frac{\partial W}{\partial \tau} + \frac{\partial^2 W}{\partial x^2} + \left( \frac{2r}{\sigma^2} - 1 \right) \frac{\partial W}{\partial x} - \frac{2r}{\sigma^2}W = 0
+\end{align*}
+
+For sanity let $\kappa := \frac{2r}{\sigma^2}$ so
+\begin{equation*}
+	\iff -\frac{\partial W}{\partial \tau} + \frac{\partial^2 W}{\partial x^2} + \left( \kappa - 1 \right) \frac{\partial W}{\partial x} - \kappa W = 0
+\end{equation*}
+
+Set $W(x,\tau) = e^{\rho x + \xi \tau} u(x, \tau) = \psi \cdot u(x, \tau)$, then
+\begin{align*}
+	\frac{\partial W}{\partial \tau} &= \xi \psi u + \psi \frac{\partial u}{\partial \tau}\\
+	\frac{\partial W}{\partial x} &= \rho \psi u + \psi \frac{\partial u}{\partial x} \\
+	\frac{\partial^2 W}{\partial x^2} &= \rho^2 \psi u + 2\rho \psi \frac{\partial u}{\partial x} + \psi \frac{\partial^2 u}{\partial x^2}
+\end{align*}
+
+then our PDE in $W$ becomes the PDE in $u$
+\begin{align*}
+	& -\left[ \xi \psi u + \psi \frac{\partial u}{\partial \tau} \right] + \left[ \rho^2 \psi u + 2\rho \psi \frac{\partial u}{\partial x} + \psi \frac{\partial^2 u}{\partial x^2} \right] + \left( \kappa - 1 \right) \left[ \rho \psi u + \psi \frac{\partial u}{\partial x} \right] - \kappa \psi u = 0 \\
+	\iff&  - \xi u -\frac{\partial u}{\partial \tau} + \rho^2 u + 2\rho \frac{\partial u}{\partial x} + \frac{\partial^2 u}{\partial x^2} + \left( \kappa - 1 \right) \rho u + (\kappa - 1) \frac{\partial u}{\partial x} - \kappa u = 0 \\
+	\iff&  -\frac{\partial u}{\partial \tau} + \frac{\partial^2 u}{\partial x^2} + (\kappa - 1 + 2\rho) \frac{\partial u}{\partial x} + ( -\xi + \rho^2 + (\kappa - 1)\rho - \kappa) u = 0
+\end{align*}
+
+\indent Now, we see that we essentially have the canonical heat equation from the two leftmost terms. In order to rid ourselves of the pesky convection and heat source terms $u_x$ and $u$ we must solve the following system for $\rho$ and $\xi$,
+
+\begin{align*}
+	\kappa - 1 + 2\rho &= 0 \\
+	-\xi + \rho^2 + (\kappa - 1)\rho - \kappa &= 0
+\end{align*}
+
+which has the solution
+\begin{align*}
+	\rho &= -\frac{1}{2} (\kappa - 1) = -\frac{1}{2} \left( \frac{2r}{\sigma^2} - 1 \right) \\
+	\xi &= -\frac{1}{4} (\kappa + 1)^2 = -\frac{1}{4} \left( \frac{2r}{\sigma^2} + 1 \right)^2
+\end{align*}
+
+and so we finally have the PDE
+\begin{equation*}
+	-\frac{\partial u}{\partial \tau} + \frac{\partial^2 u}{\partial x^2} = 0
+\end{equation*}
+
+which is precisely the heat equation in $x$ and $\tau$. We now take a moment to notice that our substitution in $\tau:= T - \frac{2t}{\sigma^2}$ has led to a time reversal and so our terminal condition becomes the initial condition
+\begin{align*}
+	V(S, T) &= \max (K - S, 0) \\
+	\implies e^{\rho x} u(x, 0) &= \max (K - e^x, 0)
+\end{align*}
+
+with corresponding boundary conditions
+\begin{align*}
+	\lim_{S\to 0} V(S, t) &= Ke^{-r(T - t)} \\
+	\implies \lim_{x \to -\infty} e^{\rho x + \xi \tau} u(x, \tau) &= Ke^{-r(T - (T - \frac{2\tau}{\sigma^2}))} = Ke^{-r\frac{2\tau}{\sigma^2}} \\ 
+	\lim_{S\to +\infty} V(S, t) &= 0 \\
+	\implies \lim_{x \to +\infty} e^{\rho x + \xi \tau} u(x, \tau) &= 0 \\ 
+\end{align*}
+
+\newpage
+\section{Code}
+\subsection{q5\_main.cpp}
+\lstinputlisting{../code/q5/q5_main.cpp}
+\subsection{q6\_main.cpp}
+\lstinputlisting{../code/q6/q6_main.cpp}
+\subsection{rng.h}
+\lstinputlisting{../code/q5/rng.h}
+\subsection{rng.cpp}
+\lstinputlisting{../code/q5/rng.cpp}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

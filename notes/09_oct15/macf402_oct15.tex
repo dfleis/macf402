@@ -1,0 +1,336 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{The Black Scholes World}
+\date{October 15 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Hedging in the Black-Scholes World}
+
+\indent Last time we went through the hedging portion fairly hurriedly. We will go through the material a little more thoroughly here now. \\
+
+\indent By the risk neutral pricing formula we know that if we have the price of the underlying asset $S^1_t$ then the price of a derivative security with payoff $f_T = f(S^1_T)$ will be
+\begin{equation*}
+	V_t = \mathbb E_{\mathbb Q}[e^{-r(T - t)}f(S^1_T) | \mathcal F_t]
+\end{equation*}
+
+at time $t \in [0, T]$. Since
+\begin{equation*}
+	S^1_T = S^1_te^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)}
+\end{equation*}
+
+and that $S^1_t \in \mathcal F_t$ and $(W_T - W_t)$ is independent of the filtration we have that
+\begin{equation*}
+	V_t = e^{-r(T - t)}F(T - t, S^1_t)
+\end{equation*}
+
+where\footnote{From our lemma/result introduced in the previous lecture?} 
+\begin{align*}
+	F(T - t,x) &= \mathbb E_{\mathbb Q}[f(xe^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)}] \\
+	&= \frac{1}{\sqrt{2\pi}} \int^\infty_{-\infty} f(xe^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma\sqrt{(T - t)}z}) \cdot e^{-\frac{1}{2}z^2}\,dz
+\end{align*}
+
+because we're dealing an expectation of a function of normally distributed random variable\footnote{Should this have variance $(T - t)$?}. Note that $F(T - t,x)$ is simply us restating the expectation of the payoff of a derivative security for an underlying asset $S^1$ with price $x$. The key is that we're permitted to formulate our payoff as such from results introduced previously. We can show that $F$ is differentiable with respect to $t$ and $x$ (but we omit this?). If we write
+\begin{equation*}
+	G(t,x) = F(T - t, e^{rt}x)
+\end{equation*}
+
+then we have created a function giving us the expectation of the payoff for an asset whose value is compounded up to $t$. Thus,\footnote{Should this be $e^{-r(T - t)}$?}
+\begin{align*}
+	V_t &= e^{-rT}G(t, S^1_t) = e^{-rT}F(T - t,e^{rt}S^1_t) \\
+	\overline{V}_t &= e^{-rT}G(t,\overline{S}^1_t) = e^{-rT}F(T - s, e^{rt}\overline{S}^1_t) = e^{-rT}F(T - t,S^1_t)
+\end{align*}
+
+
+We apply It\^{o}'s formula to $e^{-rT}G(t,\overline{S}^1_t)$ to find
+\begin{equation*}
+	\overline{V}_t = e^{-rT}\Big(G(0,\overline{S}^1_0) + \int^t_0 \frac{\partial}{\partial u} G(u, \overline{S}^1_u)\,du + \int^t_0 \frac{\partial}{\partial x} G(u,\overline{S}^1_u)\,d\overline{S}^1_u + \frac{1}{2}\int^t_0 \frac{\partial^2}{\partial x^2} G(u, \overline{S}^1_u)\,d\langle \overline{S}^1_{(\cdot)}\rangle_u \Big)
+\end{equation*}
+
+Under $\mathbb Q$ we know that $\overline{S}^1$ and $\overline{V}$ are martingales, thus
+\begin{align*}
+	d\overline{S}^1_t &= \overline{S}^1_t \sigma \,dW_t \quad \text{and} \\
+	d\langle \overline{S}^1_{(\cdot)}\rangle_t &= (\sigma\overline{S}^1_t)^2\,du
+\end{align*}
+
+so we see that the It\^{o} expansion becomes
+\begin{equation*}
+	\overline{V}_t = e^{-rT}\Big(G(0,\overline{S}^1_0) + \int^t_0 \frac{\partial}{\partial u} G(u, \overline{S}^1_u)\,du + \int^t_0 \frac{\partial}{\partial x} G(u,\overline{S}^1_u)\overline{S}^1_t \sigma \,dW_t + \frac{1}{2}\int^t_0 \frac{\partial^2}{\partial x^2} G(u, \overline{S}^1_u)\sigma^2(\overline{S}^1_t)^2\,du \Big)
+\end{equation*}
+
+\indent Since $\overline{V}$ is a martingale we must have that all bounded variation terms $du$ be equal to zero.\footnote{This is something worthy of proof but we omit this step.}~That is,
+\begin{equation*}
+	\frac{\partial}{\partial t}G(t,\overline{S}^1_t) + \frac{1}{2}\frac{\partial^2}{\partial x^2}G(t,\overline{S}^1_t)\sigma^2(\overline{S}^1_t)^2 = 0 \quad \forall~t\in[0,T]
+\end{equation*}
+
+When $t = T$ we must also have the terminal condition 
+\begin{equation*}
+	\overline{V}_t = f_T = f(S^1_T)
+\end{equation*}
+
+But note that if $t = T$ we have\footnote{Where does the $f(e^{rT}x)$ come from?}
+\begin{equation*}
+	F(0, e^{rT}x) = f(e^{rT}x)
+\end{equation*}
+
+\indent Applying the multivariate chain rule, making the substitution $u = T - t$ and $v = e^{rT}x$ such that
+\begin{equation*}
+	G(t,x) = F(u,v)
+\end{equation*}
+
+we get
+\begin{align*}
+	\frac{\partial G(t,x)}{\partial t} &= \frac{\partial F(u,v)}{\partial u}\frac{\partial u}{\partial t} + \frac{\partial F(u,v)}{\partial v}\frac{\partial v}{\partial t} \\
+	&= \frac{\partial F}{\partial u}\cdot(-1) + \frac{\partial F}{\partial v} re^{rt}x \\
+	&= -\frac{\partial F}{\partial u} + rv\frac{\partial F}{\partial v} \\
+	\frac{\partial G(t,x)}{\partial x} &= e^{rt}\frac{\partial F}{\partial v} \\
+	\frac{\partial^2 G(t,x)}{\partial x^2} &= e^{2rt}\frac{\partial^2 F}{\partial v^2}
+\end{align*}
+
+If we set $x = \overline{S}^1_t$ then we see $v = e^{rt}x = S^1_t$, hence
+\begin{align*}
+	G(t,\overline{S}^1_t) &= F(T - t,e^{rt}\overline{S}^1_t) \\
+	&= F(T - t,S^1_t)
+\end{align*}
+
+Substituting these partial derivatives into the the equation we set to zero above we get
+\begin{align*}
+	0 &= \frac{\partial}{\partial t}G(t,\overline{S}^1_t) + \frac{1}{2}\frac{\partial^2}{\partial x^2}G(t,\overline{S}^1_t)\sigma^2(\overline{S}^1_t)^2 \\
+	\implies 0 &= -\frac{\partial F(u, S^1_t)}{\partial u} + rS^1_t\frac{\partial F(u, S^1_t)}{\partial S^1_t} + \frac{1}{2}e^{2rt}\frac{\partial F(u, S^1_t)}{\partial (S^1_t)^2}\sigma^2(\overline{S}^1_t)^2 \\
+	&= -\frac{\partial F(u, S^1_t)}{\partial u} + rS^1_t\frac{\partial F(u, S^1_t)}{\partial S^1_t} + \frac{1}{2}e^{2rt}\frac{\partial F(u, S^1_t)}{\partial (S^1_t)^2}\sigma^2e^{-2rt}(S^1_t)^2 \\
+	&= -\frac{\partial F(u, S^1_t)}{\partial u} + rS^1_t\frac{\partial F(u, S^1_t)}{\partial S^1_t} + \frac{\sigma^2}{2}(S^1_t)^2 \frac{\partial F(u, S^1_t)}{\partial (S^1_t)^2}
+\end{align*}
+
+However, note that
+\begin{align*}
+	\overline{V}_t &= e^{-rT}G(t, \overline{S}^1_t) = F(T - t,S^1_t) \\
+	\implies e^{-rt}V_t &= F(T - t,S^1_t)
+\end{align*}
+
+so
+\begin{align*}
+	\frac{\partial F}{\partial t} &= e^{-rt}\frac{\partial V}{\partial t} - re^{-rt}V \\
+	\implies \frac{\partial F}{\partial (T - t)} &= -e^{-rt}\frac{\partial V}{\partial t} + re^{-rt}V
+\end{align*}
+
+and noting that
+\begin{equation*}
+	\frac{\partial F}{\partial S} = e^{-rt}\frac{\partial V}{\partial S} \quad \text{and} \quad \frac{\partial^2 F}{\partial S^2} = e^{-rt}\frac{\partial^2 V}{\partial S^2}
+\end{equation*}
+
+We have
+\begin{align*}
+	0 &= -\frac{\partial F(u, S^1_t)}{\partial u} + rS^1_t\frac{\partial F(u, S^1_t)}{\partial S^1_t} + \frac{\sigma^2}{2}(S^1_t)^2 \frac{\partial F(u, S^1_t)}{\partial (S^1_t)^2} \\
+	&= -\bigg[-e^{-rt}\frac{\partial V}{\partial t} + re^{-rt}V\bigg] + rSe^{-rt}\frac{\partial V}{\partial S} + \frac{\sigma^2}{2}S^2e^{-rt}\frac{\partial^2 V}{\partial S^2} \\
+	&= \frac{\partial V}{\partial t} - rV + rS\frac{\partial V}{\partial S} + \frac{\sigma^2}{2}\frac{\partial^2 V}{\partial S^2}
+\end{align*}
+
+with terminal condition $V(T,S) = f(S^1_T)$. This is the Black-Scholes PDE, in particular we call it a backwards parabolic partial differential equation and it is related to the heat equation. It turns out that there is a deep relationship between solutions to PDEs and to those of SDEs. In this case
+\begin{equation*}
+	V(t,S) = \mathbb E_{\mathbb Q}[e^{-r(T - t)}f(S^1_T)|S^1_t = s]
+\end{equation*}
+
+is called the Feynman-Kac solution. We see that $(Vt,S)$ is a solution to the Black-Scholes PDE but the conditional expectation is a SDE under $\mathbb Q$ such that
+\begin{equation*}
+	dS^1_t = rS^1_t\,dt + \sigma S^1_t\,dW_t
+\end{equation*}
+
+\indent If we are permitted to assume that the Black-Scholes model and its PDE hold then an implication is that the non-zero terms in the original It\^{o} expansion above
+\begin{equation*}
+	\overline{V}_t = e^{-rT}G(0,\overline{S}^1_0) + e^{-rT}\int^t_0 \frac{\partial}{\partial x} G(u,\overline{S}^1_u)\,d\overline{S}^1_u
+\end{equation*}
+
+can be rewritten as
+\begin{equation*}
+	\overline{V}_t = e^{-rT}F(T,S^1_0) + e^{-rT}\int^t_0 e^{ru}\frac{\partial F(T - u, S^1_u)}{\partial x}\,d\overline{S}^1_u 
+\end{equation*}
+
+However, recall that we had as our hedge strategy $H^*$ such that
+\begin{align*}
+	\overline{V}_t(H^*) &= \overline{V}_0 + \int^t_0\sigma H^1_u\overline{S}^1_u\,dW_u \\
+	&= \overline{V}_0 + \int^t_0 H^1_u\,d\overline{S}^1_u
+\end{align*}
+
+\indent So we see that the integrand $e^{ru}\frac{\partial F(T - u, S^1_u)}{\partial u}$ above is equal to the $H^1$ component of our portfolio process when we came up with the minimal hedge. Recall that from the Martingale Representation Theorem we had
+\begin{align*}
+	N_t &= \mathbb E_{\mathbb Q}[e^{-rT} f_T | \mathcal F_t] \quad \text{(martingale by the tower property)} \\
+	V_t &= e^{rt}N_t \\
+	&= \mathbb E_{\mathbb Q}[e^{-r(T - t)} f(S^1_t) | \mathcal F_t] \\
+	\implies V_t &= e^{-r(T - t)}F(T - t,S^1_t) \\
+	\implies N_t &= e^{-rT}F(T - t,S^1_t) \\
+	&\left\{
+		\begin{array}{ll}
+			H^1_t &= \frac{\gamma_te^{rt}}{\sigma S^1_t} \\
+			H^0_t &= N_t - \frac{\gamma_t}{\sigma} = N_t - e^{-rt}S^1_tH^1_t \\
+			&= e^{-rT}\bigg[F(T - t,S^1_t) - S^1_t\frac{\partial F(T - t,S^1_t)}{\partial x} \bigg]
+		\end{array}
+	\right.
+\end{align*}
+
+and using the partial derivative $\frac{\partial F}{\partial x} = e^{-rt}\frac{\partial V}{\partial S}$ computed above we get
+\begin{equation*}
+	H^1_t = e^{rt}\frac{\partial F}{\partial x} = e^{rt}e^{-rt}\frac{\partial V}{\partial S} = \frac{\partial V}{\partial S} 
+\end{equation*}
+
+\indent We interpret this partial derivative as the hedge ratio. That is, the number of shares of $S^1$ to be held at time $t$. For puts and calls we can derive an explicit formula for $\frac{\partial V}{\partial S}$.\footnote{For a later date?}~We call this quantity the option ``delta'' and the hedging strategy $H^* = (H^0, H^1)$ is called ``delta hedging''.
+
+\subsection{Greeks}
+
+We may consider a variety of option price sensitivities, called ``Greeks''. Namely,
+\begin{align*}
+	\Delta &= \frac{\partial V}{\partial S} \quad \Gamma = \frac{\partial^2 V}{\partial S^2} \\
+	\Theta &= \frac{\partial V}{\partial t} \\
+	\rho &= \frac{\partial V}{\partial r} \\
+	\nu &= \frac{\partial V}{\partial \sigma} \quad \text{``vega''} \\
+\end{align*}
+
+For a European call option we can prove that its just a calculus exercise to show that
+\begin{equation*}
+	H^1_t = \frac{\partial V}{\partial S} = \Delta = \Phi(d_1)
+\end{equation*}
+
+We will elaborate on the Greeks more in the future but not we will look into the Black-Scholes implied volatility.
+
+\section{Black-Scholes Implied Volatility}
+
+Implied volatility is the $\sigma$ which matches the observed/quoted price to the Black-Scholes price from the formula. We have some map $\sigma \mapsto V(t,S_t,T,r,\sigma,K)$ and our problem is to somehow meaningfully invert it given all other parameters. Letting $C$ be the price of a call option, we want to solve for $\sigma$ the equation
+\begin{equation*}
+	C^{obs} = C^{BS}(\sigma)
+\end{equation*}
+
+using some numerical method (bisection, Newton, Newton-Raphson, ...). Newton's method is particularly applicable since it relies on the use of derivatives of the function (i.e. $\frac{\partial V}{\partial \sigma}$) to estimate the function output.
+
+\section{A Discussion on Exotic Options}
+
+\indent The idea will be to price more interesting options (that are currently not available in the market) using the $\sigma^{obs}$ from the Black-Scholes model.
+
+\subsection{Barrier Options}
+
+\indent These options become either cancelled or activated when the underlying asset passes some threshold (i.e. passes a barrier).
+
+\subsubsection{Down \& Out Call Option}
+
+\indent We consider a barrier option on asset $S^1$ that gives us the right to buy the asset for strike $K$ at time $T$ as long as $S^1_t \geq H~\forall~t\in[0,T]$. Mathematically, we write the payoff as
+\begin{equation*}
+	f_T = (S^1_T - K)^+\mathds 1_{S_t \geq H~\forall~t\in[0,T]}
+\end{equation*}
+
+\indent We see that this option must be cheaper than a vanilla call option since we reduce the chance that it will be exercised in the money. The question is, of course, by how much? Clearly it's related to $H$, but it's not immediately obvious by how much.
+
+\subsubsection{Up \& In Call Option}
+
+\indent Similar to down \& out option but instead of being cancelled at barrier $H$ the option is instead activated at barrier $H$. That is, the buyer may only exercise the contract if the underlying asset passes the threshold $H$ before maturity. If we define
+\begin{align*}
+	\overline{S}^1_t &= \sup_{t\in[0,T]}S^1_t \\
+	\underline{S}^1_t &= \inf_{t\in[0,T]}S^1_t
+\end{align*}
+
+then we see we may reformulate the payoff of a down \& out call as
+\begin{equation*}
+	f_T = (S^1_T - K)^+\mathds 1_{\underline{S}^1_t\geq H}
+\end{equation*}
+
+and the payoff of an up \& in call as
+\begin{equation*}
+	f_T = (S^1_T - K)^+\mathds 1_{\overline{S}^1_t\geq H}
+\end{equation*}
+
+\subsection{Lookback Type Options}
+
+The strike price of a lookback option is based on either the max or the min of the underlying asset price over the term of the contract. We write the payoff of a lookback call with strike based on the lower bound of the asset path as
+\begin{equation*}
+	f_T = S^1_T - \underline{S}^1_T
+\end{equation*}
+
+
+\subsection{Asian Options}
+
+\indent The payoff of an Asian option is defined by some ``average'' price over the term of the contract.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

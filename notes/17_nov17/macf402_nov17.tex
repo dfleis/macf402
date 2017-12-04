@@ -1,0 +1,502 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}} % \vec command
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{PDE Methods for Option Pricing}
+\date{November 17 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{American Options}
+
+\subsection{Preliminaries}
+
+\indent Suppose the payoff of an option written on asset with price process $S$ is $\Gamma(S)$ and the option can be exercised at any time $t \in [0, T]$. Then, the value of the American option, denoted by
+\begin{equation*}
+	V_{AM}(S, t) \quad \text{at time } t \in [0, T]
+\end{equation*}
+
+must satisfy 
+\begin{equation*}
+	V_{AM}(S, t) \geq \Gamma(S)
+\end{equation*}
+
+\indent On the other hand, note that we may always wait until the final time $T$ to exercise the option. Therefore, we must have the value
+\begin{equation*}
+	V_{AM}(S, t) \geq V_{Euro}(S, t)
+\end{equation*}
+
+\indent Lets consider the case of a put option. At some point the value of the European put may dip below the payoff (i.e. if we expect that $\P(\text{\em Go back in the money})$ to be small). This cannot happen for an American put since you can just buy it and immediately exercise it for a riskless profit $(S - S_t) - V^P_{AM}(S, t)$ at time $t$. So, in the case of an American put option, the value most satisfy
+\begin{align*}
+	V^P_{AM}(S, t) &> K - S \quad \text{if } S > S_f(t) \\
+	V^P_{AM}(S, t) &= K - S \quad \text{if } S \leq S_f(t)
+\end{align*}
+
+for some ``contact point'' $S_f(t)$, where the boundary $S_f(t)$ is some smooth curve below $K$ (in the case of a put) which dictates at what price $S$ can drop to when the put value is identically $K - S$. We can show that $V_{AM}(S, t)$ must satisfy something called the \underline{smooth pasting} condition at the boundary:
+\begin{equation*}
+	\frac{\partial}{\partial S} V_{AM} \left(S_{f}(t), t\right) = \frac{d \Gamma}{dS} \left(S_f(t)\right)
+\end{equation*}
+
+Take a portfolio $\Pi$ of
+\begin{equation*}
+	\Pi =
+	\begin{cases}
+		\text{Long 1 option} \\
+		\text{Short } \Delta \text{ units of } S
+	\end{cases}
+\end{equation*}
+
+Then the value of this portfolio, denoted $\Pi_t$, is
+\begin{equation*}
+	\Pi_t = V_t - \Delta S_t
+\end{equation*}
+ 
+\indent Hence, for an American option, the holder can make a risk free profit in excess of $r_f$ unless we satisfy\footnote{How?}
+\begin{equation*}
+	\frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2S^2 \frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV \leq 0
+\end{equation*}
+
+{\em ``This is what we call a linear complimentarity problem.''} \\
+
+Thus, we must have that either
+\begin{align*}
+	&V_{AM} = \Gamma(S) \quad \text{or} \\
+	&V_{AM} \text{ satisfies the Black-Scholes inequality above\footnotemark}
+\end{align*}
+
+\footnotetext{I'm not very clear on this...} \indent No arbitrage implies that the Black-Scholes inequality must be satisfied. The optimal solution satisfies all above inequalities and either $V_{AM} = \Gamma(S)$ or the Black-Scholes inequality.
+
+\subsection{Pricing}
+
+Consider the transformation
+\begin{equation*}
+	u(x, \tau) = e^{\rho x + \xi t} V \left(S, T - \frac{2\tau}{\sigma^2} \right)
+\end{equation*}
+
+where
+\begin{align*}
+	S &= Ke^x \\
+	t &= T - \frac{2\tau}{\sigma^2} \\
+	\rho &= -\left( \frac{r}{\sigma^2} - \frac{1}{2} \right) \\
+	\xi &= -\left( \frac{r}{\sigma^2} + \frac{1}{2} \right)^2
+\end{align*}
+
+then we have
+\begin{equation*}
+	V(S, t) = v(x, \tau) = v \left( \log S, \frac{\sigma^2}{2}(T - t) \right)
+\end{equation*}
+
+\indent With these substitutions we have shown that the Black-Scholes PDE transforms to the canonical heat equation $\frac{ \partial u }{ \partial \tau } = \frac{ \partial^2 u }{ \partial x^2 }$ and so we have the similar inequality
+\begin{equation*}
+	-\frac{\partial u}{\partial t} + \frac{\partial^2 u}{\partial x^2} \leq 0
+\end{equation*}
+
+Then, with the transformed payoff function
+\begin{equation*}
+	g(x, t) = e^{\rho x + \xi t}\Gamma(S)
+\end{equation*}
+
+at $(x, t)$ with $t > 0$ we get either
+\begin{align*}
+	u_t - u_{xx} &> 0 \quad \text{and } u = g  \text{ (i.e. the Black-Scholes inequality) or,} \\
+	u_t - u_{xx} &= 0 \quad \text{and } u > g \text{ (i.e. the Black-Scholes equation holds in equality) }
+\end{align*}
+
+with $u = g, u > g$ corresponding to $V_{AM} = \Gamma(S), V_{AM} > \Gamma(S)$, respectively. Then, we may multiply our two conditions into a single equation
+\begin{align*}
+	(u - g)(u_t - u_{xx}) &= 0 \\
+	u_t - u_{xx} \geq 0, \quad u - g &\geq 0
+\end{align*}
+
+If we consider the BTCS algorithm at a point $(x_j, t_{n + 1})$ then we have
+\begin{align*}
+	u_t = u_{xx} \implies& \frac{U^{n + 1}_j - U^n_j}{\Delta t} = \frac{ U^{n + 1}_{j + 1} - 2U^{n + 1}_j + U^{n - 1}_{j - 1} }{(\Delta x)^2} \\
+	\implies&~U^{n + 1}_j - U^n_j = \nu \left( U^{n + 1}_{j + 1} - 2 U^{n + 1}_j + U^{n + 1}_{j - 1} \right)  \quad \left(\text{with }\nu = \frac{\Delta t}{(\Delta x)^2} \right) \\
+	\implies&~U^{n + 1}_j = U^n_j + \nu \left( U^{n + 1}_{j + 1} - 2 U^{n + 1}_j + U^{n + 1}_{j - 1} \right) \\
+	\implies&~U^n_j = U^{n + 1}_j - \nu \left( U^{n + 1}_{j + 1} - 2 U^{n + 1}_j + U^{n + 1}_{j - 1} \right) \\
+	\implies&~U^n_j = U^{n + 1}_j - \nu U^{n + 1}_{j + 1} + 2\nu U^{n + 1}_j -\nu U^{n + 1}_{j - 1}  \\
+\implies&~U^n_j = - \nu U^{n + 1}_{j + 1} + (1 + 2\nu) U^{n + 1}_j -\nu U^{n + 1}_{j - 1} 
+\end{align*}
+
+Hence, under the BTCS algorithm, we have the conditions
+\begin{align*} 
+	(u - g)(u_t - u_{xx}) = 0 &\iff \left( U^{n + 1}_j - g^{n + 1}_j \right) \left( \nu U^{n + 1}_{j + 1} - (1 + 2\nu) U^{n + 1}_j + \nu U^{n + 1}_{j - 1}  \right) = 0 \\
+	u_t - u_{xx} \geq 0 &\iff U^n_j + \nu U^{n + 1}_{j + 1} - (1 + 2\nu) U^{n + 1}_j + \nu U^{n + 1}_{j - 1} \geq 0 \\
+	u - g \geq 0 &\iff U^{n + 1}_j - g^{n + 1}_j - \geq 0
+\end{align*}
+
+We specify this in matrix notation by
+
+\begin{align*}
+	\left( \vec{U}_{n + 1} - \vec{g}^{n + 1} \right)^T \left( {\bf A}\vec{U}^{n + 1} - \vec{b} \right) &= 0 \\
+	{\bf A}\vec{U}^{n + 1} - \vec{b} &\geq 0 \\
+	\vec{U}^{n + 1} - \vec{g}^{n + 1} &\geq 0
+\end{align*}
+
+where we mean $\vec{x} \geq 0$ to be that the the elements of $\vec{x}$ satisfy elementwise inequality with the elements of $\vec{0} = \{0, 0, ...., 0\}$. We are unable to just solve 
+\begin{equation*}
+	{\bf A}\vec{U}^{n + 1} - \vec{b} \geq 0 \\
+\end{equation*}
+
+since the we may have that the second inequality 	$\vec{U}^{n + 1} - \vec{g}^{n + 1} \geq 0$ is not satisfied. So, we must solve the whole system simultaneously using some iterative method. We write
+\begin{equation*}
+	\vec{U}^{n + 1} = \vec{g}^{n + 1} + \vec{x}
+\end{equation*}
+
+We are looking for some vector $\vec{x}$ satisfying
+\begin{align*}
+	\vec{x}^T\left( {\bf A}\vec{x} - \hat{b} \right) &= 0 \\
+	{\bf A}\vec{x} - \hat{b} &\geq 0 \\
+	\vec{x} &\geq 0
+\end{align*}
+
+where $\hat{b} = \vec{b} - {\bf A}\vec{g}^{n + 1}$. To do so we split ${\bf A}$ into its lower, diagonal, and upper triangular component matrices
+\begin{align*}
+	{\bf A} &=
+	\begin{bmatrix}
+	0 & 0 & \cdots & 0 \\
+	l_{2,1} & 0 & \cdots & 0 \\
+	\vdots & \vdots & \ddots & 0 \\
+	l_{n,1} & l_{n,2} & \cdots & 0
+	\end{bmatrix}		
+	+
+	\begin{bmatrix}
+	d_1 & 0 & \cdots & 0 \\
+	0 & d_2 & \cdots & 0 \\
+	\vdots & \vdots & \ddots & \vdots \\
+	0 & 0 & \cdots & d_n 
+	\end{bmatrix}
+	+
+	\begin{bmatrix}
+	0 & u_{1,2} & \cdots & u_{1,n} \\
+	0 & 0 & \cdots & u_{2,n} \\
+	\vdots & \vdots & \ddots & \vdots \\
+	0 & 0 & \cdots & 0 \\
+	\end{bmatrix} \\
+	&= {\bf L} + {\bf D} + {\bf U}
+\end{align*}
+
+We write
+\begin{align*}
+	\left( {\bf D} + {\bf L} \right) \vec{x} &\geq \hat{b} - {\bf U}\vec{x} \\
+	\implies \left( {\bf D} + {\bf L} \right) \vec{x} &\geq {\bf D}\vec{x} \left[ \hat{b} - \left({\bf D} + {\bf U}\right) \vec{x} \right]
+\end{align*}
+
+\indent Given some current guess of $\vec{x}$, say $\vec{x}^{(k)}$, we transform our task into an iterative problem and generate $\vec{x}^{(k + 1)}$ by solving the inequality
+\begin{equation*}
+	{\bf D} \vec{x}^{(k + 1)} \geq {\bf D}\vec{x}^{(k)} + \hat{b} - \left({\bf D} + {\bf U} \right)\vec{x}^{(k)} - {\bf L}\vec{x}^{(k + 1)} 
+\end{equation*}
+
+\indent Note that this method requires ${\bf L}\vec{x}^{(k + 1)}$ to be known to solve for the value at $k + 1$, but by some matrix trickery we are able to know these values due to some property of lower triangular matrices \& how we split up our matrix ${\bf A}$ into its components. We ensure that $\vec{x}^{(k + 1)} \geq 0$ by setting
+\begin{equation*}
+	\vec{x}^{(k + 1)} = \max \left[0, \vec{x}^{(k)} - {\bf D}^{-1}\left( \hat{b} + \left( {\bf D } + {\bf U} \right)\vec{x}^{(k)} - {\bf L}\vec{x}^{(k + 1)} \right) \right]
+\end{equation*}
+
+\indent Since $\vec{x}^{(k + 1)}$ appears on the RHS, if we freeze an iteration at any point midway through an update then the current solution vector is of the form
+\begin{equation*}
+	\left(x_1^{(k + 1)}, ..., x_j^{(k + 1)}, x_{j + 1}^{(k)}, ..., x_{J - 1}^{(k)} \right)
+\end{equation*}
+
+by the fact\footnote{I think the point was that we have lots of multiplication by 0.}~that we have a lower triangular matrix ${\bf L}$
+\begin{equation*}
+	\begin{bmatrix}
+		0 & 0 & \cdots & 0 \\
+		l_{2,1} & 0 & \cdots & 0 \\
+		\vdots & \vdots & \ddots & 0 \\
+		l_{n,1} & l_{n,2} & \cdots & 0
+	\end{bmatrix} 
+	\cdot
+	\begin{bmatrix}
+		x_1^{(k + 1)} \\
+		x_2^{(k + 1)} \\
+		\vdots \\
+		x^{(k)}_{J - 2} \\
+		x^{(k)}_{J - 1}
+	\end{bmatrix} 
+	= 
+	\begin{bmatrix}
+		0 & l_{2,1}x_2^{(k + 1)} & \cdots
+	\end{bmatrix}
+\end{equation*}
+
+Then we find
+\begin{equation*}
+	x^{(k + 1)}_j = \max \left[0, x^{(k)}_k + {\bf A}^{-1} \left( \hat{b}_j - {\bf A}_{j,j}x^{(k)}_j - {\bf A}_{j,j+1}x^{(k)}_{j + 1} - {\bf A}_{j,j-1}x^{(k + 1)}_{j - 1} \right) \right]
+\end{equation*}
+
+We have some parameter $\omega$ which may speed up\footnote{Without motivation?}~the problem
+\begin{equation*}
+	x^{(k + 1)}_j = \max \left[0, x^{(k)}_k + \omega{\bf A}^{-1} \left( \cdots \right) \right]
+\end{equation*}
+
+So, we can rewrite the problem as finding a vector $\vec{x} \geq 0$ satisfying 
+\begin{equation*}
+	{\bf A}\vec{x} - \hat{b} \geq 0
+\end{equation*}
+
+minimizing
+\begin{equation*}
+	G = \frac{1}{2}\vec{x}^T {\bf A} \vec{x} - \hat{b}^T\vec{x}
+\end{equation*}
+
+with stopping constraint
+\begin{equation*}
+	\vec{x}^{(k + 1)} - \vec{x}^{(k)} < \vec{\epsilon}
+\end{equation*}
+
+The $G$ is reduced at each stage as long as we have $\omega \in (0, 2)$. Note that this process was defined for an American put option. For an American call option we would \underline{never exercise an American call option early} unless we have the option written on a stock with dividends.
+
+\section{Barrier Options}
+
+\indent In some ways barrier options are more simple to consider than traditional (unbounded) options. The barrier specified in a given contract permits us to reduce the interval for which the asset price $S$ may appears. That is, in a up \& out call we have the value $V = 0$ if $S$ ever goes above $B$. This permits us to ``ignore'' the region $S \geq B$ since we know the corresponding price.
+
+\subsection{Up \& Out Call Option}
+
+An up \& out call option expires worthless if $S$ passes barrier $B$ before expiry $T$. That is,
+\begin{equation*}
+	V(B, t) = 0 \quad t \in [0,T]
+\end{equation*}
+
+we have the boundary value problem (under Black-Scholes)
+\begin{align*}
+	V_t + rSV_S + \frac{1}{2}\sigma^2S^2V_{SS} - rV &= 0 \quad t \in [0,T), S \in [0, B] \\
+	V(0, t) &= 0 \\
+	V(S, t) &= \Gamma(S) \quad S \in (0, B)
+\end{align*}
+
+We may still need to specify some artificial boundary for $S$ near $0$, say $0 + \epsilon = \epsilon$, but we have some natural for $S \to \infty \implies B$ as a boundary. 
+
+\subsection{Up \& In Option} 
+
+If we wanted to price an up \& in option it is often times more single to use the decomposition 
+\begin{equation*}
+	\text{(Up \& In)} + \text{(Up \& Out)} = \text{Vanilla}
+\end{equation*}
+
+where we are able to price the appropriate up \& out and vanilla options.
+
+\section{Lookback Options}
+
+\subsection{Floating Strike Lookback Put}
+
+In the case of a floating strike lookback put we have payoff function
+\begin{equation*}
+	\Gamma(S) = \left(M - S\right)^+
+\end{equation*}
+
+where
+\begin{equation*}
+	M = \max_{t \in [0,T]} S_t
+\end{equation*}
+
+\indent That is, we have the floating strike $M$ as the max price which the asset $S$ attains over the life of the option. We write
+\begin{equation*}
+	M(t) = \max_{\tau \in [0, t)} S(\tau)
+\end{equation*}
+
+where $M(t)$ is the max price the asset $S$ attains up to $t$. Then we see that the option value is clearly a function of $S, M,$ and $t$ is the region $0 \leq S \leq M$. Hence,
+\begin{equation*}
+	V = V(S, M, t)
+\end{equation*}
+
+when we have $S(t) < M(t)$ (i.e. the price $S$ has decreased from its max) then we have $M(t)$ is not changing in time. If $M(t) = M$ constant, we have that $V$ must solve the traditional Black-Scholes equation. When $S(t) = M(t)$ (i.e. the floating strike is at the current price of the asset), for $0 < t < T$, we note
+\begin{equation*}
+	\P\left( M(t) = M(T) \right) = 0 \quad \text{(i.e. the floating strike will change with prob. 1)}
+\end{equation*}
+
+Thus, we find that the option value does not depend on $M(t)$\footnote{I'm still not convinced of this...}~implying
+\begin{equation*}
+	\frac{\partial V}{\partial M} = 0 \quad \text{when } S(t) = M(t)
+\end{equation*}
+
+and so at $t = T$ we have option value
+\begin{equation*}
+	\Gamma(S, M) = (M - S)^+
+\end{equation*}
+
+We end up with a system of PDEs
+\begin{align*}
+	&V_t + SV_S + \frac{1}{2}\sigma^2 V_{SS} = rV \quad t \in [0, T),~S \in [0,M],~M > 0 \\
+	&\begin{cases}
+		V(0, M, t) \approx M e^{-r(T - t)} & t \in [0, T) \\
+		V(S, M, T) = \Gamma(S, M) & S \in [0, M],~M > 0
+	\end{cases} \\
+	&\frac{\partial V}{\partial M}(M, M, t) = 0 \quad t \in [0, T),~M > 0
+\end{align*}
+
+We reduce the dimension of the problem by scaling with $\frac{S}{M} = \xi$. Let
+\begin{align*}
+	\Gamma(S, M) &= M(1 - \xi)^+ \\
+	W(\xi, t) &= \frac{1}{M}V(S, M, t) \\
+	P(\xi) &= \frac{1}{M}\Gamma(S, M)
+\end{align*}
+
+Then, for $\xi \in (0, 1)$ we have
+\begin{align*}
+	W_t + \frac{1}{2}\sigma^2\xi^2 W_{\xi\xi} + r\xi W_\xi - rW = 0 \\
+	W(\xi, T) = P(\xi) = (1 - \xi)^+
+\end{align*}
+
+But we have the boundary condition $S = M \iff \xi = 1$, so
+\begin{align*}
+	0 = \frac{\partial V}{\partial M} &= \frac{\partial}{\partial M} MW(\xi, t) \\
+	&= W + M\frac{\partial W}{\partial \xi}\frac{\partial \xi}{\partial M} \\
+	&= W + M\frac{\partial W}{\partial \xi}\frac{\partial}{\partial M} \left( \frac{S}{M} \right) \\
+	&= W + M\frac{\partial W}{\partial \xi} \left( - \frac{S}{M^2} \right) \\
+	&= W - \xi\frac{\partial W}{\partial \xi}
+\end{align*}
+
+So, on the line $\frac{S}{M} = \xi = 1$ we have
+\begin{equation*}
+	0 = W - \xi W_\xi
+\end{equation*}
+
+and for a put at $\frac{S}{M} = \xi = 0$ we have
+\begin{equation*}
+	W(0, t) = \frac{1}{M} V(0, M, t) \approx \frac{1}{M}Me^{-r(T - t)} = e^{-r(T - t)}
+\end{equation*}
+
+Setting $x = \log \xi \iff \xi = e^x$ and 
+\begin{equation*}
+	u(x, t) = e^{\rho x + \xi t} W \left(e^x, T - \frac{2t}{\sigma^2} \right)
+\end{equation*}
+
+we see that the right boundary is at $x = 0$ and
+\begin{equation*}
+	(\rho + 1)u = u_x
+\end{equation*}
+
+We may approximate the boundary numerically via a finite difference algorithm by
+\begin{equation*}
+	(\rho + x) U^n_J = \frac{U^n_J - U^n_{J - 1}}{\Delta x}
+\end{equation*}
+
+so (on the boundary) we get
+\begin{equation*}
+	U^n_J = \frac{1}{1 - (\rho + 1)\Delta x} U^n_{J - 1}
+\end{equation*}
+
+and we may transform $u$ back to $V$ to get our final option value.
+
+\subsection{Fixed Strike Lookback Put}
+
+We have payoff with fixed strike $K$ 
+\begin{equation*}
+	\Gamma(S, M) = (K - M)^+
+\end{equation*}
+
+\indent It turns out that no dimension reduction is possible and so we must solve the coupled PDEs directly. 
+
+\section{Final Notes on PDE Methods}
+
+\indent A major issue with PDE methods is that a particular problem will require a usually unique implementation that is specific to the features of the problem. \\
+
+The main PDE problems to remember are
+\begin{enumerate}
+	\item European options (as a baseline) 
+	\item American options
+	\item Any path dependent options
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

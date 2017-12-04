@@ -1,0 +1,460 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Computational Aspects of Continuous Time Finance}
+\date{October 20 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Barrier Options}
+
+\indent Letting $M^X_t = \max_{0 \leq s \leq t}X_s$, for $X$ standard Brownian motion, we can prove the \underline{reflection principle} for Brownian motion and use this to derive ``closed form''-ish\footnote{That is, closed form up to the normal CDF.}~formulas for barrier option prices (i.e. up \& in, down \& out, lookback -- anything depending on the max or min in some time interval).
+
+\begin{theorem}{The Reflection Principle for Barrier Options} If $B$ is a standard Brownian motion and $M^B_T = \max_{0\leq t \leq T} B_t$ then we can show that
+\begin{equation*}
+	\mathbb P(B_T < b, M^B_T > c) = \mathbb P(B_T > 2c - b) = \Phi\bigg(\frac{b - 2c}{\sqrt{T}}\bigg)
+\end{equation*}
+
+where $\mathbb P$ is any measure where $B$ is Brownian.
+\end{theorem}
+
+\begin{corollary} The joint probability density function of $B_T$ and $M^B_T$ is 
+\begin{equation*}
+	f(T,b,c) = \frac{2(2c - b)}{T\sqrt{T}}\phi\bigg(\frac{b - 2c}{\sqrt{T}}\bigg)
+\end{equation*}
+\end{corollary}
+
+\indent The basic idea to the reflection principle is that the first time you reach $c$ you reflect your Brownian path. The strength of this is that once we know the joint PDF (which we have just expressed) then we can glean a lot of information about the max and the min of the system.\footnote{See ``Handbook of Brownian Motion'' for all of the formulas you could possibly want to know about Brownian motion (and some you don't).}
+
+
+
+\section{Calibrating a Volatility Surface}
+
+\indent Our goal will to be construct a sufficiently smooth surface for arbitrary strikes $K_i$ and maturities $T_i$ using observed option prices (OTM options) and their implied volatilities. \\
+
+\indent Consider a response variable $Y$ and predictor variable $X$ and assume that observations are related by
+\begin{equation*}
+	Y_i = m(X_i) + \epsilon_i
+\end{equation*}
+
+where $m$ is the observation relationship function and $\epsilon_i$ is the observation noise. If we assume that $\{\epsilon_i\}_{i=1}^n$ are independent and have mean zero then we may state
+\begin{equation*}
+	m(x) = \mathbb E[Y|X = x]
+\end{equation*}
+
+for a given data set $\{(x_i,y_i)\}^n_{i=1}$. In a local neighbourhood (a small ball) around $x$ containing information about $m(x)$ we estimate $m(x)$ by $\hat{m}(x)$ by locally ``averaging'' the data around these points. For a given $x$ we say
+\begin{equation*}
+	\hat{x}(x) = \frac{1}{n}\sum^n_{i=1} w_{i,n}(x)\cdot y_i
+\end{equation*}
+
+where $w$ is some weighting function for each observation. The sequence $\{w_{i,n}\}_{i=1}^n$ denotes the sequence of weights for our observed data. Generally, for $\epsilon > 0$, more weight is given to the values in $(x - \epsilon, x + \epsilon)$. We use a kernel density function $K(x)$ to apply the weights. The kernel density function has properties
+\begin{enumerate}
+	\item $K(x) \geq 0$, bounded, continuous, symmetric
+	\item $\int K(u)\,du = 1$
+\end{enumerate}
+
+\indent Note that this looks like a density probability density function, and so a popular choice is to use the standard normal (Gaussian) density
+\begin{equation*}
+	K(x) = \frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}x^2}
+\end{equation*}
+
+\indent It is important for our volatility surface to be sufficiently monotone and sufficiently smooth because otherwise there may be (theoretically) arbitrage opportunities for investors. To this extent, note that not all points should appear on the surface since some observations will be anomalous and not line up with theoretical volatilities (i.e. someone paid too much, old data, etc...). In two variables (strike/moneyness and maturity) we use the product of two independent Gaussian densities
+\begin{equation*}
+	K(u_1, u_2) = K_1(u_1)\cdot K_2(u_2)
+\end{equation*}
+
+\indent To ensure that our surface is smooth enough, that is, to ensure that our kernel is successful, is dependent on the smoothing bandwidth. Define, for $h > 0$
+\begin{equation*}
+	K_h(u) = \frac{1}{h}K(u) = \frac{1}{h\sqrt{2\pi}} e^{-\frac{1}{2}(\frac{u}{h})^2}
+\end{equation*}
+
+or if we have the joint density of our two variables
+\begin{equation*}
+	K_1(u_1)\cdot K_2(u_2) = \frac{1}{h_1\sqrt{2\pi}} e^{-\frac{1}{2}(\frac{u}{h_2})^2} \cdot \frac{1}{h_2\sqrt{2\pi}} e^{-\frac{1}{2}(\frac{u}{h_2})^2}
+\end{equation*}
+
+We note that
+\begin{enumerate}
+	\item $h$ too small leads to an overfit, ``too bumpy'', surface
+	\item $h$ too large leads to an underfit surface that has smoothed away useful information 
+	\item The optimal $h$ can be determined by cross validation (not discussed).
+\end{enumerate}
+
+Consider
+\begin{equation*}
+	Y = m(X) + \epsilon
+\end{equation*}
+
+where
+\begin{align*}
+	\mathbb E[\epsilon | X = x] &= 0 \\
+	\mathbb E[\epsilon^2|X = x] &= \sigma^2(x)
+\end{align*}
+
+then we have
+\begin{align*}
+	m(x) &= \mathbb E[Y|X = x] \\
+	&= \int yf(y|x)\,dy \\
+	&= \int y \frac{f(x,y)}{f(x)}\,dy \\
+	&= \frac{\int y f(x,y)\,dy}{f(x)}
+\end{align*}
+
+and if we assume the data $\{(x_i,y_i)\}^n_{i=1}$ are i.i.d. we may approximate the integrals by sums to find the \underline{Nadayara-Watson estimator} for $m(x)$
+\begin{equation*}
+	\hat{m}(x) = \frac{\frac{1}{n}\sum^n_{i=1}K_h(x - x_i)\cdot y_i}{\frac{1}{n}\sum^n_{j=1}K_h(x - x_j)}
+\end{equation*}
+
+where $K_h$ is the kernel density estimator for $f(x)$. Therefore we see that weights $w_{i,n}(x)$ are 
+\begin{align*}
+	\hat{m}(x) &= \frac{1}{n}\sum^n_{i=1} w_{i,n}(x)\cdot y_i =  \frac{\sum^n_{i=1}K_h(x - x_i)\cdot y_i}{\sum^n_{j=1}K_h(x - x_j)}\\
+	\implies w_{i,n}(x) &= \frac{K_h(x - x_i)}{\frac{1}{n}\sum^n_{j=1}K_h(x - x_j)}
+\end{align*} 
+
+Note that for a particular observation $x_i$ we have
+\begin{equation*}
+	\hat{m}(x) = \frac{K_h(0)\cdot y_i + \sum^n_{j\neq i}K_h(x_i - x_j)\cdot y_i}{\sum^n_{j=1}K_h(x_i - x_j)}
+\end{equation*}
+
+and so as $h\to 0$ we find that\footnote{``This just comes from a property of the normal distribution''}
+\begin{equation*}
+	\hat{m}(x) \to \frac{K_h(0)y_i}{K_h(0)} = y_i
+\end{equation*}
+
+since if we look at
+\begin{equation*}
+	K_h(x) = \frac{1}{h\sqrt{2\pi}}e^{-\frac{1}{2}\frac{x^2}{h^2}}
+\end{equation*}
+
+as $h \to 0$ we get $K_h(x) \to \delta(x)$ where
+\begin{equation*}
+	\delta(x) =
+	\begin{cases}
+	1 & \text{if } x = 0 \\
+	0 & \text{elsewhere} 
+	\end{cases}
+\end{equation*}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture} %%%% Var = 1
+\begin{axis}[
+  no markers, domain=-3:3, samples=200, 
+  axis lines*=left,
+  hide y axis, 
+  every axis x label/.style={at=(current axis.right of origin),anchor=west},
+  xtick=\empty, ytick=\empty,
+  enlargelimits=false, clip=false, axis on top,
+  grid = major,
+  height=4cm, width=4cm,
+  ]
+  
+  \addplot [very thick] {gauss(0,1)};
+  \draw [yshift=-0.6cm, latex-latex](axis cs:0,0) node [fill=white] {$\sigma^2 = 1$} (axis cs:0,0);
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} %%%% Var = 0.5
+\begin{axis}[
+  no markers, domain=-3:3, samples=200, 
+  axis lines*=left,
+  hide y axis, 
+  every axis x label/.style={at=(current axis.right of origin),anchor=west},
+  xtick=\empty, ytick=\empty,
+  enlargelimits=false, clip=false, axis on top,
+  grid = major,
+  height=4cm, width=4cm,
+  ]
+  
+  \addplot [very thick] {gauss(0,0.5)};
+  \draw [yshift=-0.6cm, latex-latex](axis cs:0,0) node [fill=white] {$\sigma^2 = 0.5$} (axis cs:0,0);
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} %%%% Var = 0.25
+\begin{axis}[
+  no markers, domain=-3:3, samples=200, 
+  axis lines*=left,
+  hide y axis, 
+  every axis x label/.style={at=(current axis.right of origin),anchor=west},
+  xtick=\empty, ytick=\empty,
+  enlargelimits=false, clip=false, axis on top,
+  grid = major,
+  height=4cm, width=4cm,
+  ]
+  
+  \addplot [very thick] {gauss(0,0.25)};
+  \draw [yshift=-0.6cm, latex-latex](axis cs:0,0) node [fill=white] {$\sigma^2 = 0.25$} (axis cs:0,0);
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} %%%% Var = 0.125
+\begin{axis}[
+  no markers, domain=-3:3, samples=200, 
+  axis lines*=left,
+  hide y axis, 
+  every axis x label/.style={at=(current axis.right of origin),anchor=west},
+  xtick=\empty, ytick=\empty,
+  enlargelimits=false, clip=false, axis on top,
+  grid = major,
+  height=4cm, width=4cm,
+  ]
+  
+  \addplot [very thick] {gauss(0,0.125)};
+  \draw [yshift=-0.6cm, latex-latex](axis cs:0,0) node [fill=white] {$\sigma^2 = 0.125$} (axis cs:0,0);
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} %%%% Var = 0.0625
+\begin{axis}[
+  no markers, domain=-3:3, samples=200, 
+  axis lines*=left,
+  hide y axis, 
+  every axis x label/.style={at=(current axis.right of origin),anchor=west},
+  xtick=\empty, ytick=\empty,
+  enlargelimits=false, clip=false, axis on top,
+  grid = major,
+  height=4cm, width=4cm,
+  ]
+  
+  \addplot [very thick] {gauss(0,0.0625)};
+  \draw [yshift=-0.6cm, latex-latex](axis cs:0,0) node [fill=white] {$\sigma^2 = 0.0625$} (axis cs:0,0);
+\end{axis}
+\end{tikzpicture}
+$\cdots$
+\begin{tikzpicture} %%%% Var = 0
+\begin{axis}[
+  no markers, domain=-3:3, samples=200, 
+  axis lines*=left,
+  hide y axis, 
+  every axis x label/.style={at=(current axis.right of origin),anchor=west},
+  xtick=\empty, ytick=\empty,
+  enlargelimits=false, clip=false, axis on top,
+  grid = major,
+  height=4cm, width=4cm,
+  ]
+  
+  \addplot [very thick]  coordinates {(0,0)(0,1)};
+  \addplot [very thick] coordinates {(-3,0)(3,0)};
+  \draw [yshift=-0.6cm, latex-latex](axis cs:0,0) node [fill=white] {$\sigma^2 \to 0$} (axis cs:0,0);
+\end{axis}
+\end{tikzpicture}
+\end{figure}
+
+\indent So we see that we get far too much precision (i.e. catastrophically underfit) since this will fit exactly every point to the curve. On the other hand, as $h \to \infty$ we get $K_h(x) \to 1$. So we have
+\begin{equation*}
+	\lim_{h\to\infty} \hat{m}(x) = \frac{\frac{1}{n}\sum^n_{i=1}1\cdot y_i}{\frac{1}{n}\sum^n_{j=1}1} = \frac{1}{n}\sum_{i=1}^n y_i = \overline{y}
+\end{equation*}
+
+which is just a catastrophically oversmoothed horizontal line at the sample average implied volatility. For implied volatilities the observations are
+\begin{equation*}
+	\sigma_{imp}(m_i,T_i)
+\end{equation*}
+
+and the response variables are
+\begin{equation*}
+	(m_i,T_i)
+\end{equation*}
+
+for $m_i$ the moneyness ($\frac{S}{K}$, but there are different parameterizations possible) and time to maturity $T_i$. So, the 2-D Nadayara-Watson estimator for the implied volatility surface is
+\begin{equation*}
+	\hat{\sigma}(m,T) = \frac{\sum_{i=1}^n\sigma_{imp}(m_i,T_i)\cdot g(m - m_i, T - T_i)}{\sum_{j = 1}^n g(m - m_i, T - T_i)}
+\end{equation*}
+
+where 
+\begin{equation*}
+	g(x,y) = \frac{1}{2\pi}e^{-\frac{x^2}{2h_1}}\cdot e^{-\frac{y^2}{2h_2}}
+\end{equation*}
+
+\indent Note that we have reparameterized $h_1^2, h_2^2$ with $h_1, h_2$ since these are just input parameters. We wish to restrict our estimator to a domain
+\begin{equation*}
+	(m,t) \in [m_L,m_H]\times[t_L,t_H]
+\end{equation*}
+
+where $m_L,m_H,t_L,t_H$ denote some upper and lower bound of moneyness and maturity as great as the min and the max of both variables' observed data. It's important not to extrapolate too far beyond our observed domain because otherwise the space shuttle Challenger explodes. Usually we set $m \in [0.5,1.5]$, use only OTM price/volatility data, and never use $m = 1$ since this has problematic patterns and behaviour. The decision to select only OTM options is because that ITM options usually have some extra premium attach to them and display unique behaviour. We also avoid using extremely OTM options since these are essentially lottery tickets. That is, severely OTM options should have value zero but do not since the seller must make a premium. \\
+
+\indent We must also do some data cleaning based on some arbitrage considerations (i.e. removing severe outliers since we predict no arbitrage). In general, we look for
+\begin{align*}
+	C_t &\leq (S_t - K)^+ \\
+	P_t &\leq (K - S_t)^+
+\end{align*}
+
+This will be further elaborated upon in an upcoming assignment.
+
+\subsection{Example from a Past Exam}
+
+\indent Suppose the Black-Scholes implied volatilities of European call and put options on a stock with price $S_0 = 50$ at $t = 0$ are
+\begin{figure}[h!]
+\centering
+\begin{tabular}{r|r|r|r}
+	$K$ & $T$ & Call $\sigma_{imp}$ & Put $\sigma_{imp}$ \\
+	\hline
+	48 & 0.25 & 0.1916 & 0.1943 \\
+	49 & 0.25 & 0.1982 & 0.2027 \\
+	51 & 0.25 & 0.2032 & 0.2145 \\
+	52 & 0.25 & 0.2159 & 0.2206 \\
+\end{tabular}
+\end{figure}
+\newline
+
+\underline{Question 1}: What does the above data tell us about the validity of the Black-Scholes model? \\
+
+We see that implied volatilities as computed by the Black-Scholes model are not constant. \\
+
+\underline{Question 2}: Outline a method/algorithm for fitting the volatility smile/surface to the above data using a Gaussian kernel $K_h(x)$,
+\begin{equation*}
+	K_h(x) = \frac{1}{h\sqrt{2\pi}}e^{-\frac{x^2}{h}}
+\end{equation*}
+
+Be as specific as possible and discuss any practical considerations. \\
+
+Let 
+\begin{equation*}
+	\hat{m}(x) = \frac{\sum^n_{i=1}K_h(x - x_i)\cdot y_i}{\sum^n_{j=1}K_h(x - x_j)}
+\end{equation*}
+
+where $(x_i,y_i)$ are the observed moneyness $x_i = \frac{S}{K_i}$ and the implied volatility
+\begin{equation*}
+	y_i = \hat{\sigma}_{imp}(x_i) = \hat{\sigma}_{imp} 
+\end{equation*}
+
+This gives the fitted smile $(x,m(x))$ for moneyness levels $x \in [x_{low},x_{high}]$. Note that we should use only OTM implied volatilities to calibrate our model:
+\begin{figure}[h!]
+\centering
+\begin{tabular}{r|r|c|c}
+	$K$ & $T$ & Call $\sigma_{imp}$ & Put $\sigma_{imp}$ \\
+	\hline
+	48 & 0.25 & -- & 0.1943 \\
+	49 & 0.25 & -- & 0.2027 \\
+	51 & 0.25 & 0.2032 & -- \\
+	52 & 0.25 & 0.2159  & -- \\
+\end{tabular}
+\end{figure}
+
+\indent The choice of smooth parameter $h$ is also critical. Selecting $h$ too low will lead to an overfit model that predicts arbitrage and selecting $h$ too high will leader to an underfit model that has smoothed away useful information. Furthermore, we should remove outliers and not extrapolate beyond our observed data. \\
+
+\underline{Question 3}: Implement the method outlined in (2) and report the approximation error for $K = 51$ and $h = 0.1$ and $S_0 = 50$. \\
+
+We know that our kernel density function (in one dimension) looks like
+\begin{equation*}
+	K_{0.1}(x - x_i) = \frac{1}{0.1\cdot\sqrt{2\pi}}e^{-\frac{1}{2}\big(\frac{x - x_i}{0.1}\big)^2}
+\end{equation*}
+
+for target moneyness $x$ and observed moneyness $x_i$. Defining moneyness as $\frac{S}{K_i}$ and letting $x = ^{50}/_{51}$, we list our data in a table we see
+
+\begin{figure}[h!]
+\centering
+\begin{tabular}{c|r|r|r|r|c|c}
+	$i$ & $K$ & $x_i$ & $\sigma_{imp}^{OTM}$ & $^{50}/_{51} - x_i$ & $K_h(^{50}/_{51} - x_i)$ & $K_h(^{50}/_{51} - x_i)\cdot \sigma_{imp_{i}}^{OTM}$ \\
+	\hline
+	1 & 48 & $^{50}/_{48}$ & 0.1943 & -0.06127 & 3.3066 & 0.6425 \\
+	2 & 49 & $^{50}/_{49}$ & 0.2027 & -0.04002 & 3.6825 & 0.7464 \\
+	3 & 51 & $^{50}/_{51}$ & 0.2032 &  0.00000 & 3.9894 & 0.8106 \\
+	4 & 52 & $^{50}/_{52}$ & 0.2159 &  0.01885 & 3.9191 & 0.8461 \\
+	\hline
+	& & & & {\bf Sum = } & 14.8976 & 3.0456 \\
+\end{tabular}
+\end{figure}
+
+and we find that
+\begin{equation*}
+	\hat{\sigma}(x) = \hat{m}(^{50}/_{51}) = \frac{3.0456}{14.8976} = 0.2044
+\end{equation*}
+
+and with approximation error
+\begin{equation*}
+	\sigma_{imp_3}^{OTM} - \hat{m}(x) = 0.2032 - 0.2044 = -0.0012
+\end{equation*}
+
+\indent Note that our answer is highly dependent on the particular parameterization of moneyness. If we instead defined it instead as $\frac{K}{S}$ then we would see a (slightly?) different answer. \\
+
+\underline{Question 4}: Explain how to use the method in (2) to price a European call option expiring in 3 months with strike $K = 49.5$ (no calculations required). \\
+
+{\em I didn't take notes for this part...}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

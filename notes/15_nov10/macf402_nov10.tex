@@ -1,0 +1,444 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}} % \vec command
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{PDE Methods}
+\date{November 10 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{PDE Type Methods}
+
+PDE type methods are particularly useful for pricing American \& barrier type options.
+
+\subsection{Black-Scholes PDE \& Finite Difference Method}
+
+\indent The finite difference method is one option to find numerical solutions to option pricing problems (as opposed to other numerical methods to solve PDEs). \\
+
+\indent Recall that if we let $V(S, t)$ be the value at time $t$ of a European derivative security on an underlying $S$ risky asset with payoff $\Lambda(S)$ at expiry $T$. We showed that the function $V(S, t)$ satisfies
+\begin{equation*}
+	\frac{\partial V}{\partial t} + rS\frac{\partial V}{\partial S} + \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} = rV \quad \text{over the interval } (0, \infty)\times[0, T)
+\end{equation*}
+
+with terminal condition $V(S, T) = \Lambda(S)$. We need additional boundary conditions for a complete specification, and these conditions depend on the particular form $\Lambda(S)$ takes (i.e. put/call options). For a call option we require, for $K > 0$,
+\begin{align*}
+	\lim_{S\to 0} V(S,t) &= 0 \\
+	\lim_{S\to\infty} V(S,t) &\approx S - Ke^{-r(T - t)}
+\end{align*}
+
+and for a put option we require
+\begin{align*}
+	\lim_{S\to 0} V(S, t) &= Ke^{-r(T - t)} \\
+	\lim_{S\to\infty} V(S, t) &= 0
+\end{align*}
+
+\subsubsection{Derivation of the Black-Scholes PDE}
+
+\indent We have derived the Black-Scholes PDE using martingale-type methods, applying It\^{o}'s formula, and manipulating the result into known martingales. Let's derive it again another way. \\
+
+\indent The no-arbitrage argument implies that any risk free asset must have the same return as the ``bank account'' $S_0$. We create a portfolio composed of 1 unit of $V$ and some amount $-\Delta$ of the risky asset $S$ (i.e. short $\Delta$ units of $S$). Then, the value of the portfolio is
+\begin{equation*}
+	\Pi(t) = V(S, t) - \Delta S(t)
+\end{equation*}
+
+Applying It\^{o}'s rule to $V(S, t)$ we get, for some volatility function $\sigma^2(S, t)$,
+\begin{align*}
+	V(S, t) &= V(0, 0) + \int^t_0 V_t(S, u) \,du + \int^t_0 V_{S}(S, u)\,dS_u + \frac{1}{2}\int^t_0 V_{SS}(S,u) \,d\langle S \rangle_u \\
+	&= \int^t_0 V_t(S, u) \,du + \int^t_0 V_{S}(S, u)\,dS_u + \frac{1}{2}\int^t_0 V_{SS}(S,u) \sigma^2(S, u) \,du \\
+	&= \int^t_0 \left( V_t(S, u) + \frac{1}{2}\sigma^2(S, u) V_{SS}(S, t) \right) \,du + \int^t_0 V_S(S, u)\,dS_u \\
+	\implies dV(S, t) &= \left( V_t(S, t) + \frac{1}{2}\sigma^2(S, u) V_{SS}(S, t) \right)\,dt + V_S(S, t)\,dS_t \\ 
+	&\equiv \left( \frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2(S, t) \frac{\partial^2 V}{\partial S^2} \right) \,dt + \frac{ \partial V}{\partial S} \,dS_t
+\end{align*}
+
+so
+\begin{align*}
+	d\Pi(t) &= dV(S, t) - \Delta\,dS(t) \\
+	&= \left( \frac{ \partial V }{ \partial S } - \Delta \right)\,dS(t) + \left( \frac{ \partial V }{ \partial t } + \frac{1}{2}\sigma^2(S,t)\frac{ \partial^2 V }{ \partial S^2 } \right)\,dt
+\end{align*}
+
+If $\Delta = \frac{ \partial V }{ \partial S }$ then 
+\begin{equation*}
+	\left( \frac{ \partial V }{ \partial S } - \Delta \right)\,dS(t) + \left( \frac{ \partial V }{ \partial t } + \frac{1}{2}\sigma^2(S,t)\frac{ \partial^2 V }{ \partial S^2 } \right)\,dt = \left( \frac{ \partial V }{ \partial t } + \frac{1}{2}\sigma^2(S,t)\frac{ \partial^2 V }{ \partial S^2 } \right)\,dt
+\end{equation*}
+
+\indent That is, only risk-free terms remain (i.e. only deterministic bounded variation $dt$ terms remain). No arbitrage implies that\footnote{I think this has to do with the fact that the change in portfolio value $\,d\Pi$ must be only determined by the risk free rate $r$}
+\begin{align*}
+	d\Pi(t) &= r\Pi(t)\,dt \\
+	\implies \frac{ d\Pi(t) }{ dt } &= r\Pi(t)
+\end{align*}
+
+and if $\sigma(S, t) = \sigma S$ then we have
+\begin{align*}
+	d\Pi(t) &= \left( \frac{ \partial V }{ \partial t } + \frac{1}{2}\sigma^2S^2\frac{ \partial^2 V }{ \partial S^2 } \right)\,dt \\
+	\implies \frac{d\Pi(t)}{dt} &= \frac{ \partial V }{ \partial t } + \frac{1}{2}\sigma^2S^2\frac{ \partial^2 V }{ \partial S^2 } \\
+	\implies	 r\Pi &= \frac{ \partial V }{ \partial t } + \frac{1}{2}\sigma^2S^2\frac{ \partial^2 V }{ \partial S^2 }
+\end{align*}
+
+But $\Pi = V - \Delta S$ so $r\Pi = r \left( V - \Delta S \right) = rV - rS\frac{ \partial V }{ \partial S }$, hence
+\begin{align*}
+	\frac{ \partial V }{ \partial t } + \frac{1}{2}\sigma^2S^2\frac{ \partial^2 V }{ \partial S^2 } &= rV - rS\frac{ \partial V }{ \partial S } \\
+	\frac{ \partial V }{ \partial t } + \frac{1}{2}\sigma^2 S^2 \frac{ \partial^2 V }{ \partial S^2 } + rS \frac{ \partial V }{ \partial S } &= rV
+\end{align*}
+
+as desired. We complete the specification of the Black-Scholes PDE with boundary information on the domain. We have $S > 0$ and $0 \leq t \leq T$ and we classify the Black-Scholes PDE as a parabolic partial differential equation.
+
+\subsubsection{Transformation of the Black-Scholes PDE to the Heat Equation}
+
+\indent The canonical example of a parabolic PDE is the diffusion/heat equation, which is typically defined for $t > 0, x \in \R$. That is, we have the heat equation
+\begin{equation*}
+	\frac{ \partial u }{ \partial t } = k \frac{ \partial^2 u }{ \partial x^2 }, \quad k > 0
+\end{equation*}
+
+with some initial condition $u(x, 0) = u_0(x)$. To transform the Black-Scholes PDE to the heat equation we first perform the substitution
+\begin{align*}
+	x = \log S &\iff S = e^x \\
+	\tau = \frac{\sigma^2}{2} (T - t) &\iff t = T - \frac{2\tau}{\sigma^2}
+\end{align*}
+
+and let $V(S, t) = W(x, \tau) = W \left( \log S, \frac{\sigma^2}{2}(T - t) \right)$, then, heavily relying on the chain rule,
+\begin{align*}
+	\frac{\partial V}{\partial t} &= \frac{\partial W}{\partial \tau}\frac{\partial \tau}{\partial t} = -\frac{\sigma^2}{2}\frac{\partial W}{\partial \tau} \\
+	\frac{\partial V}{\partial S} &= \frac{\partial W}{\partial x} \frac{\partial x}{\partial S} = \frac{1}{S}\frac{\partial W}{\partial x} \\
+	\frac{\partial^2 V}{\partial S^2} &= \frac{\partial}{\partial S} \left( \frac{1}{S} \frac{\partial W}{\partial x} \right) = \frac{1}{S^2}\frac{\partial^2 W}{\partial x^2} - \frac{1}{S^2}\frac{\partial W}{\partial x}
+\end{align*}
+
+Substituting these partial derivatives into our original PDE we get
+\begin{align*}
+	& \left[ -\frac{\sigma^2}{2}\frac{\partial W}{\partial \tau} \right] + \frac{\sigma^2}{2}S^2\left[ \frac{1}{S^2}\frac{\partial^2 W}{\partial x^2} - \frac{1}{S^2}\frac{\partial W}{\partial x} \right] + rS\left[ \frac{1}{S}\frac{\partial W}{\partial x} \right] - r\left[ W \right] = 0 \\
+	\iff& -\frac{\sigma^2}{2}\frac{\partial W}{\partial \tau} + \frac{\sigma^2}{2}\frac{\partial^2 W}{\partial x^2} - \frac{\sigma^2}{2}\frac{\partial W}{\partial x} + \frac{\partial W}{\partial x} - rW = 0 \\
+	\iff& -\frac{\partial W}{\partial \tau} + \frac{\partial^2 W}{\partial x^2} -\frac{\partial W}{\partial x} + \frac{2r}{\sigma^2}\frac{\partial W}{\partial x} - \frac{2r}{\sigma^2}W = 0 \\
+	\iff& -\frac{\partial W}{\partial \tau} + \frac{\partial^2 W}{\partial x^2} + \left( \frac{2r}{\sigma^2} - 1 \right) \frac{\partial W}{\partial x} - \frac{2r}{\sigma^2}W = 0
+\end{align*}
+
+For sanity let $\kappa := \frac{2r}{\sigma^2}$ so
+\begin{equation*}
+	\iff -\frac{\partial W}{\partial \tau} + \frac{\partial^2 W}{\partial x^2} + \left( \kappa - 1 \right) \frac{\partial W}{\partial x} - \kappa W = 0
+\end{equation*}
+
+\indent We see that in this form we are very close to the classical heat equation. Unfortunately for us $\kappa = \frac{2r}{\sigma^2}$ and so we cannot set this term to 0. To deal with these terms we set $W(x,\tau) = e^{\rho x + \xi \tau} u(x, \tau)$, for some to-be-determined constants $\rho$ and $\xi$. Then, letting $\psi := e^{\rho x + \xi \tau}$ for brevity, we have
+\begin{align*}
+	\frac{\partial W}{\partial \tau} &= \xi \psi u + \psi \frac{\partial u}{\partial \tau}\\
+	\frac{\partial W}{\partial x} &= \rho \psi u + \psi \frac{\partial u}{\partial x} \\
+	\frac{\partial^2 W}{\partial x^2} &= \rho^2 \psi u + 2\rho \psi \frac{\partial u}{\partial x} + \psi \frac{\partial^2 u}{\partial x^2}
+\end{align*}
+
+and so our PDE in $W$ becomes the PDE in $u$
+\begin{align*}
+	& -\left[ \xi \psi u + \psi \frac{\partial u}{\partial \tau} \right] + \left[ \rho^2 \psi u + 2\rho \psi \frac{\partial u}{\partial x} + \psi \frac{\partial^2 u}{\partial x^2} \right] + \left( \kappa - 1 \right) \left[ \rho \psi u + \psi \frac{\partial u}{\partial x} \right] - \kappa \psi u = 0 \\
+	\iff&  - \xi u -\frac{\partial u}{\partial \tau} + \rho^2 u + 2\rho \frac{\partial u}{\partial x} + \frac{\partial^2 u}{\partial x^2} + \left( \kappa - 1 \right) \rho u + (\kappa - 1) \frac{\partial u}{\partial x} - \kappa u = 0 \\
+	\iff&  -\frac{\partial u}{\partial \tau} + \frac{\partial^2 u}{\partial x^2} + (\kappa - 1 + 2\rho) \frac{\partial u}{\partial x} + ( -\xi + \rho^2 + (\kappa - 1)\rho - \kappa) u = 0
+\end{align*}
+
+\indent We see that we are still very close to the canonical heat equation from the two leftmost terms. In order to rid ourselves of the pesky convection term $u_x$ and heat source term $u$ we must solve the following system for $\rho$ and $\xi$,
+
+\begin{align*}
+	0 &= \kappa - 1 + 2\rho \\
+	0 &= -\xi + \rho^2 + (\kappa - 1)\rho - \kappa
+\end{align*}
+
+which has the solution
+\begin{align*}
+	\rho &= -\frac{1}{2} (\kappa - 1) = -\frac{1}{2} \left( \frac{2r}{\sigma^2} - 1 \right) \\
+	\xi &= -\frac{1}{4} (\kappa + 1)^2 = -\frac{1}{4} \left( \frac{2r}{\sigma^2} + 1 \right)^2
+\end{align*}
+
+and so, for these values of $\rho$ and $\xi$, we finally have the PDE
+\begin{equation*}
+	-\frac{\partial u}{\partial \tau} + \frac{\partial^2 u}{\partial x^2} = 0 \iff \frac{\partial u}{\partial \tau} = \frac{ \partial^2 u }{ \partial x^2 }
+\end{equation*}
+
+which is precisely the heat equation in $x$ and $\tau$. We now take a moment to notice that our substitution in $\tau:= T - \frac{2t}{\sigma^2}$ has led to a time reversal making our terminal condition into an initial condition
+\begin{align*}
+	V(S, T) &= \Lambda(S) \implies u(x, 0) = e^{\rho x}\Lambda(S) =: \lambda(x) \\
+\end{align*}
+
+For a call option we have the boundary conditions
+\begin{align*}
+	\lim_{S \to 0} V(S, t) = 0 &\implies \lim_{x\to-\infty} u(x, \tau) = 0 \\
+	\lim_{S \to \infty} V(S, t) \approx S - Ke^{-r(T - t)} &\implies \lim_{x\to\infty} u(x, \tau) \approx e^{ \rho x + \xi t} \left( e^x - Ke^{-\frac{2rt}{\sigma^2}} \right)
+\end{align*}
+
+and for a put option
+\begin{align*}
+	\lim_{S \to 0} V(S, t) = Ke^{-r(T - t)} &\implies \lim_{x\to-\infty} u(x, \tau) = e^{ \rho x + \xi t}Ke^{-r\frac{2\tau}{\sigma^2}} \\
+	\lim_{S \to \infty} V(S, t) = 0 &\implies \lim_{x\to\infty} u(x, \tau) = 0
+\end{align*}
+
+Then, for a general option we want to solve
+\begin{align*}
+	u_t &= u_{xx}, \quad x \in \R, t > 0 \\
+	u(x,0) &= \lambda(x)
+\end{align*}
+
+with boundary conditions
+\begin{align*}
+	u(x, t) &\approx \alpha(x, t) \quad x\to-\infty,~\forall_{t > 0} \\
+	u(x, t) &\approx \beta(x, t) \quad x\to+\infty,~\forall_{t > 0}
+\end{align*}
+
+for some $\lambda, \alpha, \beta$ corresponding to the specification of a particular option. We approximate this numerically and implement the algorithm on a computer by discretizing in $x$ and $t$. To approximate this we must truncate the $x$ domain, leading to some error directly caused by the truncation. That is, we approximate
+\begin{align*}
+	u_t &= u_{xx}, \quad x\in(x_L, x_R),~0<t\leq t_{max} \\
+	u(x, 0) &= \lambda(x), \quad x\in[x_L, x_R)
+\end{align*}
+
+and
+\begin{align*}
+	u(x_L, t) &= \alpha(x_L, t) \quad 0 < t \leq t_{max} \\
+	u(x_R, t) &= \beta(x_R, t) \quad 0 < t \leq t_{max}
+\end{align*}
+
+\indent We should note that we have reversed the time axis in the transformation of $V$ to $u$, where $0 = $ ``option expiry'' and $t_{max} = $ ``option initialization''. We create a grid of points in $(x, t)$ covering
+\begin{equation*}
+	[x_L, x_R] \times [0, t_{max}]
+\end{equation*}
+
+where the points on our grid $(x_j, t_n), j = 0, ..., J, n = 0, ..., N$ are
+\begin{align*}
+	x_j &= x_L + j\Delta x \\
+	\Delta x &= \frac{x_R - x_L}{J} \\
+	t_n &= n\Delta t \\
+	\Delta t &= \frac{t_{max}}{N}
+\end{align*}
+
+\indent We approximate the differential terms via finite difference. We approximate $\frac{\partial u}{\partial t}$ at point $(x_j, t_n)$ by
+\begin{equation*}
+	\partial_t u^n_j \approx \frac{U^{n + 1}_j - U^n_j}{\Delta t} =: \delta^+_j U^n_j
+\end{equation*}
+
+where $\delta^+_j$ is our \underline{forward finite difference operator}. The Taylor approximation gives the error of this as 
+\begin{equation*}
+	\approx \frac{1}{2} \Delta t \frac{\partial^2 u}{\partial t^2}(x_j, t_n)
+\end{equation*}
+
+and we approximate $\frac{\partial^2 u}{\partial x^2}$ at $(x_j, t_n)$ by, applying the finite difference method twice,
+\begin{equation*}
+	\partial^2_x u^n_j \approx \frac{ U^n_{j + 1} - 2U^n_j + U^n_{j - 1} }{ (\Delta x)^2 } = \delta^-_x\delta^+_x U^n_j
+\end{equation*}
+
+In general, we approximate the second derivative at a point $x$ by
+\begin{align*}
+	\frac{ f'\left(x + \frac{1}{2}h\right) - f'\left(x - \frac{1}{2}h\right)}{ \Delta h } &\approx \frac{1}{\Delta h}  \frac{ f\left( (x + \frac{1}{2}h) + \frac{1}{2}h\right) - f\left((x + \frac{1}{2}h) - \frac{1}{2}h\right) }{ \Delta h } - \\
+	&\hphantom{{}={\approx \frac{1}{\Delta h} }} \frac{1}{ \Delta h } \frac{ f\left( (x - \frac{1}{2}h) + \frac{1}{2}h\right) - f\left((x - \frac{1}{2}h) - \frac{1}{2}h\right) }{ \Delta h } \\
+	&\approx \frac{ f(x + h) - f(x) }{(\Delta h)^2} - \frac{f(x) - f(x - h)}{(\Delta h)^2} \\
+	&\approx \frac{ f(x + h) - 2f(x) + f(x - h)}{(\Delta h)^2}
+\end{align*}
+
+\indent Thus, to approximate $\frac{ \partial^2 f }{\partial x^2}$ we end up with evaluating the function on both sides of the original point $x$.
+
+\subsection{Forward in Time Central in Space (FTCS) Algorithm}
+
+\indent If we replace $\frac{\partial u}{\partial t} = \frac{\partial^2 u }{\partial x^2}$ by the finite difference approximations $U^n_j$ at each node we get the balance equation
+\begin{equation*}
+	\frac{ U^{n + 1}_j - U^n_j }{ \Delta t } = \frac{ U^n_{j + 1} - 2U^n_j + U^n_{j - 1}}{ (\Delta x)^2 }
+\end{equation*}
+
+Letting $\nu = \frac{\Delta t}{(\Delta x)^2}$ and rearranging a little bit yields
+\begin{equation*}
+	U^{n + 1}_j = \nu U^n_{j + 1} + (1 - 2\nu)U^n_j + \nu U^n_{j - 1}
+\end{equation*}
+
+\indent Note that we have managed to express the point $(x_j, t_{n + 1})$ in terms of $(x_{j - 1}, t_n), (x_j, t_n)$, and $(x_{j + 1}, t_n)$. That is, we have managed to express a point \underline{forward in time and central in space} with respect to the points used to compute it. At $n = 0, j = 0, j = J$ we impose the boundary conditions
+\begin{align*}
+	U^0_j &= \lambda(x_j) \quad 0 \leq j < J \\
+	U^n_0 &= \alpha(x_L, t_n) \quad 0 < n \leq N \\
+	U^N_J &= \beta(x_R, t_n) \quad 0 < n \leq N
+\end{align*}
+
+\indent This is the FTCS finite difference algorithm. We should note that there are other ways to specify the boundary conditions. We have just given some examples of ``Dirichlet'' boundary conditions for $u$ (i.e. specified the boundary values). We may also provide ``von Neumann'' boundary conditions which instead specify the value of a derivative, for example
+\begin{equation*}
+	u_x(x_R, t_n) = 0 \implies u^n_J = u^n_{J - 1}
+\end{equation*}
+
+or
+\begin{equation*}
+	u_{xx} = 0 \implies \text{the solution is linear}
+\end{equation*}
+
+\subsubsection{Stability}
+
+\indent An interesting question to think about is the stability of the solution. We want to discuss stability in order to say something about error estimates (i.e whether or not a particular solution will eventually explode and become unusable). The goal is to have the solution be bound by some initial data. From the triangle inequality we have
+\begin{align*}
+	|U^{n + 1}_j| &\leq \nu |U^n_{j - 1}| + |1 - 2\nu||U^n_j| + \nu|U^n_{j + 1}| \\
+	&\leq (2\nu + |1 - 2\nu|) \norm{u^n}_\infty
+\end{align*}
+
+where the max norm, or $L$ infinity norm, of a vector $\vec{v}$ is defined as
+\begin{equation*}
+	\norm{\vec{v}}_\infty = \max_{0 \leq j \leq J} |v_j|
+\end{equation*}
+
+Hence
+\begin{equation*}
+	\max_{0 \leq j \leq J} |U^{n + 1}_j| \leq (2\nu + |1 - 2\nu|) \max_{0 \leq j \leq J} |U^{n}_j|
+\end{equation*}
+
+and if we have $(2\nu + |1 - 2\nu|) \leq 1)$ then we see that our error estimate is shrinking at each future point in $t$. Note that
+\begin{align*}
+	2\nu + |1 - 2\nu| &\leq 1 \quad \text{if } 0 < \nu \leq \frac{1}{2} \\
+	2\nu + |1 - 2\nu| &> 0 \quad \text{else}
+\end{align*}
+
+\indent Hence, if $\nu \leq \frac{1}{2}$ then the solution at time step $n + 1$ is bound by the data point before it. This ensures that the output won't explode. The stability condition $\nu \leq \frac{1}{2}$ is equivalent to
+\begin{align*}
+	\frac{ \Delta t }{ (\Delta x)^2 } &\leq \frac{1}{2} \\
+	2\Delta t &\leq (\Delta x)^2 \\
+	\implies \frac{2 T}{N} &\leq \frac{ (x_R - x_L)^2 }{J^2} \\
+	\implies \frac{2TJ^2}{(x_R - x_L)^2} &\leq N
+\end{align*}
+
+\indent Therefore, if we increase $J$ by a factor of 2 we must increase $N$ by a factor of $2\cdot 4 = 8$ to satisfy stability, that is, we require an 8-fold increase in work for a doubling of $J$!.
+
+\subsubsection{Error Tracking}
+
+We can track the error in our solution by, letting the error at node $(x_j, t_n)$ as $E^n_j$,
+\begin{equation*}
+	E^n_j = U(x_j, t_n) - U^n_j
+\end{equation*}
+
+where $u(x_j, t_n)$ is the true solution and $U^n_j$ is our approximation. We can show that (via Taylor's theorem)\footnote{This was done in Assignment 5: Question 3.}~and balance equations that
+\begin{equation*}
+	E^{n + 1}_j = \nu E^n_{j - 1} + (1 - 2)\nu^n_j + \nu E^n_{j + 1} + \Delta t T^n_j
+\end{equation*}
+
+where
+\begin{equation*}
+	T^n_j = \frac{\Delta t}{2} \frac{\partial^2}{\partial t^2} u(x_j, \tau_n) -  \frac{(\Delta x)^2}{12} \frac{\partial^4}{\partial x^4} u(\xi_j, t_n)
+\end{equation*}
+
+for some constants $\xi_j \in (x_{j - 1}, x_{j + 1})$ and $\tau_n \in (t_n, t_{n + 1})$. The idea is that if $\left| \frac{\partial^2 u}{\partial t^2} \right|$ and $\left| \frac{\partial^4 u}{\partial x^4}\right|$ are bounded in the region of interest and we satisfy the stability condition $\nu \leq \frac{1}{2}$, then we have
+\begin{equation*}
+ \left| T^n_j \right| \leq C(\Delta x)^2 \quad \text{for some constant } C
+\end{equation*}
+
+\indent Given Dirichlet boundary conditions we know that the error along the boundaries will be zero (assuming we specified it without error), that is,
+\begin{equation*}
+	E^n_0 = E^n_J = 0
+\end{equation*}
+
+Therefore, the error at a particular point in time is
+\begin{equation*}
+	\norm{E^{n + 1}}_\infty \leq \norm{E^n}_\infty + C\Delta t(\Delta x)^2
+\end{equation*}
+
+where here $\norm{\cdot}$ was defined as above so that
+\begin{equation*}
+	\max_{0 \leq n \leq N} \norm{E^n}_\infty \leq CT(\Delta x)^2
+\end{equation*}
+
+\indent This implies that reducing $\Delta x$ will reduce the bound on the error. We can show that if $\nu = \frac{1}{2}$ we recover the binomial model. We say that the binomial model is ``on the edge of stability''. Recall the FTCS algorithm
+\begin{equation*}
+	U^{n + 1}_j = \nu U^n_{j + 1} + (1 - 2\nu) u^n_j + \nu U^n_{j - 1}
+\end{equation*}
+
+and with $\nu = \frac{1}{2}$ we have
+\begin{equation*}
+	U^{n + 1}_j = \frac{1}{2}U^n_{j + 1} + \frac{1}{2} U^n_{j - 1}
+\end{equation*}
+
+\indent That is, a future\footnote{We have a future point with respect to $u$, so a past point with respect to $V$}~point in time depends on the adjacent two points above \& below it from the previous point in time. If we plot the domain in $(x, t)$-space we get something that looks like a binomial tree with nodes branching in $\pm x$ as $t$ progresses.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

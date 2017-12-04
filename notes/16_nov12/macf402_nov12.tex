@@ -1,0 +1,579 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}} % \vec command
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{PDE Methods}
+\date{November 12 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{FTCS}
+
+\subsection{FTCS with Matrix Algebra}
+
+\indent Last time we spoke about the FTCS method for approximating the heat equation. The FTCS algorithm can be written in matrix form as
+\begin{equation*}
+	\vec{U}^{n + 1} = {\bf F} \vec{U}^n + \vec{p}^n \quad 0 \leq n \leq N - 1
+\end{equation*}
+
+where ${\bf F}$ is some $(J - 1)\times(J - 1)$ matrix and $\vec{p}^n$ is some $(J - 1) \times 1$ row vector, starting with initial condition $\vec{U}^0$ in the time coordinate $u(x, 0)$. Recall that the FTCS algorithm is determined by discretizing 
+\begin{equation*}
+	\frac{ \partial u }{ \partial t } = \frac{ \partial^2 u }{ \partial x^2 } \quad \text{at } j = 0, ..., J;~n = 0, ..., N;~x_j = x_L + j\Delta x;~t_n = n\Delta t
+\end{equation*}
+
+to obtain
+\begin{equation*}
+	\frac{U^{n + 1}_j - U^n_j}{ \Delta t } = \frac{ U^n_{j + 1} - 2u^n_j + U^n_{j - 1} }{ (\Delta x)^2 }
+\end{equation*}
+
+or equivalently
+\begin{equation*}
+	U^{n + 1}_j = \nu U^n_{j + 1} + (1 - 2\nu)U^n_j + \nu U^n_{j - 1}
+\end{equation*}
+
+where $\nu = \frac{ \Delta t}{ (\Delta x)^2 }$, and boundary conditions
+\begin{align*}
+	U^0_j &= \lambda(x) \quad 0 \leq j < J \\
+	U^n_0 &= \alpha(n\Delta t) \quad 0 < n \leq N \\
+	U^n_J &= \beta(n\Delta t) \quad 0 < n \leq N
+\end{align*}
+
+For $0 < n \leq N$ and $2 \leq j \leq J - 2$ we have that
+\begin{equation*}
+	U^{n + 1}_j =
+	\begin{bmatrix}
+		\nu & (1 - 2\nu) & \nu
+	\end{bmatrix}
+	\begin{bmatrix}
+		U^n_{j - 1} \\
+		U^n_j \\
+		U^n_{j + 1}
+	\end{bmatrix}
+\end{equation*}
+
+Along the boundary line $x_j$ such that $j = 0$ we have $U^n_0$, for $0 < n \leq N$
+\begin{align*}
+	U^{n + 1}_j &= 
+	\begin{bmatrix}
+		(1 - 2\nu) & \nu
+	\end{bmatrix}
+	\begin{bmatrix}
+		U^n_1 \\
+		U^n_2
+	\end{bmatrix} + \nu U^n_0 \\
+	&=
+		\begin{bmatrix}
+		(1 - 2\nu) & \nu
+	\end{bmatrix}
+	\begin{bmatrix}
+		U^n_1 \\
+		U^n_2
+	\end{bmatrix} + \nu \cdot \alpha(n \Delta t) \\
+\end{align*}
+
+and along the boundary line $x_j$ such that $j = J$ we have $U^n_J$, for $0 < n \leq N$
+\begin{align*}
+	U^{n + 1}_j &=
+	\begin{bmatrix}
+		(1 - 2\nu) & \nu
+	\end{bmatrix}
+	\begin{bmatrix}
+		U^n_{J - 1} \\
+		U^n_{J - 2}
+	\end{bmatrix} + \nu U^n_J	\\
+	&=
+		\begin{bmatrix}
+		(1 - 2\nu) & \nu
+	\end{bmatrix}
+	\begin{bmatrix}
+		U^n_{J - 1} \\
+		U^n_{J - 2}
+	\end{bmatrix} + \nu \cdot \beta(n \Delta t) \\
+\end{align*}
+
+Putting it all together we get
+\begin{align*}
+	\vec{U}^{n + 1} &= {\bf F} \vec{U}^n + \vec{p}^n \\
+	\begin{bmatrix}
+		U^{n + 1}_1 \\
+		\vdots \\
+		U^{n + 1}_j \\
+		\vdots \\
+		U^{n + 1}_{J - 1}
+	\end{bmatrix} 
+	&=
+	\begin{bmatrix}
+		(1 - 2\nu) & \nu & 0 & 0 & \cdots & 0 & 0 & 0 \\
+		\nu & (1 - 2\nu) & \nu & 0 & \cdots & 0 & 0 & 0 \\
+		0 & \nu & (1 - 2\nu) & \nu & \cdots & 0 & 0 & 0 \\
+		\vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots & \vdots \\
+		0 & 0 & 0 & 0 & \cdots & 0 & \nu & (1 - 2\nu)
+	\end{bmatrix} \times
+	\begin{bmatrix}
+		U^n_1 \\
+		\vdots \\
+		U^n_j \\
+		\vdots \\
+		U^n_{J - 1}
+	\end{bmatrix} +
+	\begin{bmatrix}
+		\nu \cdot \alpha(n\Delta t) \\
+		0 \\ 
+		\vdots \\
+		0 \\
+		\nu \cdot \beta(n\Delta t)
+	\end{bmatrix}
+\end{align*}
+
+or in the more succinct notation introduced earlier
+\begin{equation*}
+	\vec{U}^{n + 1} = {\bf F}\vec{U}^n + \vec{p}^n
+\end{equation*}
+
+with our initial conditions
+\begin{equation*}
+	\vec{U}^0 = 
+	\begin{bmatrix}
+		\lambda(x_1) \\
+		\vdots \\
+		\lambda(x_j) \\
+		\vdots \\
+		\lambda(x_{J - 1})
+	\end{bmatrix}
+\end{equation*}
+
+where $\vec{U}^0$ is a vector of of length $J - 2$ since the initial values for $U$ at $x_0$ and $x_J$ are specified by the boundary conditions.
+
+\subsubsection{Stability in Matrix Form}
+
+\indent Going back to the stability condition, we now consider our matrix specification of the FTCS algorithm. We can write the error of our output as\footnote{We split the matrix ${\bf F}$ into ${\bf F} = {\bf I} - \nu {\bf A}$ so that we can do some eigenvalue/vector tricks.}
+\begin{equation*}
+	{\bf E}^{n + 1} = ({\bf I} - \nu{\bf A}){\bf E}^n + (\Delta t){\bf T}^n
+\end{equation*}
+
+where ${\bf A}$ is a tridiagonal matrix
+\begin{equation*}
+	{\bf A} =
+	\begin{bmatrix}
+		2 & -1 & 0 & 0 & \cdots & 0 & 0 & 0 \\
+		-1 & 2 & -1 & 0 & \cdots & 0 & 0 & 0 \\
+		0 & -1 & 2 & -1 & \cdots & 0 & 0 & 0 \\
+		\vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots & \vdots \\
+		0 & 0 & 0 & 0 & \cdots & -1 & 2 & -1 \\
+		0 & 0 & 0 & 0 & \cdots & 0 & 2 & -1 
+	\end{bmatrix}
+\end{equation*}
+
+with ${\bf T}^n$ the truncation error (unimportant if our method is stable). Therefore, we see that our result is entirely dependent on the matrix $({\bf I} - \nu {\bf A})$.
+
+\begin{lemma} The eigenvalues of a $(m \times m)$ tridiagonal matrix ${\bf M}$ of the form
+\begin{equation*}
+	{\bf M} =
+	\begin{bmatrix}
+		\beta & \gamma & 0 & 0 & \cdots & 0 & 0 & 0 \\
+		\alpha & \beta & \gamma & 0 & \cdots & 0 & 0 & 0 \\
+		0 & \alpha & \beta & \gamma & \cdots & 0 & 0 & 0 \\
+		\vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots & \vdots \\
+		0 & 0 & 0 & 0 & \cdots & \alpha & \beta & \gamma \\
+		0 & 0 & 0 & 0 & \cdots & 0 & \beta & \gamma 
+	\end{bmatrix}
+\end{equation*}
+
+are\footnote{This result was not given correctly in class (or I wrote the result incorrectly). This is the correct solution to the eigenvalues of a tridiagonal matrix.}
+\begin{equation*}
+	\mu_k = \beta + 2\beta\sqrt{\alpha \gamma} \cos\left( \frac{ k\pi }{ m + 1 } \right) \quad k = 1, ... , m
+\end{equation*}
+
+with the corresponding $j^{\text{th}}$ component of the $k^{\text{th}}$ eigenvector
+\begin{equation*}
+	(\psi_j)_k = \left(\sqrt{ \frac{\alpha}{\gamma} }\right)^j \sin\left( \frac{ jkm }{ m + 1 }\right) \quad j = 1, ... , m
+\end{equation*}
+
+where
+\begin{equation*}
+	\vec{\psi}_k = 
+	\begin{bmatrix}
+		\psi_1 \\
+		\vdots \\
+		\psi_j \\
+		\vdots \\
+		\psi_m
+	\end{bmatrix}
+\end{equation*}
+\begin{proof} Proof left as an exercise for the reader.\footnote{It's not really difficult just incredibly tedious and uninteresting manipulation of linear algebra. I somehow doubt we will be tested on this proof...}
+\end{proof}
+\end{lemma}
+
+\indent Using the above lemma in the FTCS algorithm with $m = (J - 1), \alpha = \gamma = -1$ and $\beta  = 2$ to get our eigenvalues
+\begin{align*}
+	\mu_k &= (2) + 2(2)\sqrt{(-1)(-1)} \cos \left( \frac{ k\pi }{ J } \right) \quad k = 1, ..., J - 1\\
+	&= 2 - 2\cos\left( \frac{k\pi}{J} \right)
+\end{align*}
+
+and using the identity $\frac{1 - \cos (2x)}{ 2 } = \sin^2 u$ we may write our eigenvalues $\mu_k$ as
+\begin{align*}
+	\mu_k &= 2 - 2\cos\left( \frac{k\pi}{J} \right) \\
+	&= 4 \cdot \frac{1 - \cos\left( 2 \cdot \frac{ k\pi }{ 2J } \right)}{ 2 } \\
+	&= 4\sin^2 \left( \frac{k\pi}{2J} \right) 
+\end{align*}
+
+with corresponding eigenvector/vector components
+\begin{align*}
+	(\psi_j)_k &= \left( \sqrt{ \frac{(-1)}{(-1)} }\right)^j \sin\left( \frac{jk\pi}{J} \right) \quad j, k = 1, ... , J - 1 \\
+	(\psi_j)_k &= \sin\left( \frac{jk\pi}{J} \right) \\
+	\vec{\psi}_k &= 
+	\begin{bmatrix}
+		\psi_1 \\
+		\vdots \\
+		\psi_j \\
+		\vdots \\
+		\psi_{J - 1}
+	\end{bmatrix}
+\end{align*}
+
+\indent We note that the eigenvalues for ${\bf A}$ are on the open interval $(0, 4)$ and so the eigenvalues for ${\bf F} = {\bf I} - \nu{\bf A}$ lie on the interval $(1 - 4\nu, 1)$ with the smallest eigenvalue corresponding to $j = J - 1$. Furthermore, $\nu \leq \frac{1}{2}$ gives us all eigenvalues in $(1 - 4\cdot\frac{1}{2}, 1) = (-1, 1)$ and our eigenvector of $j = J - 1$ will have entries
+\begin{equation*}
+	\sin \left( \frac{(J - 1)k\pi}{J} \right)
+\end{equation*}
+
+Recall that we expressed the error as
+\begin{equation*}
+	{\bf E}^{n + 1} = ({\bf I} - \nu{\bf A}){\bf E}^n + (\Delta t){\bf T}^n
+\end{equation*}
+
+\indent Then, with the eigenvalues/vectors above, this tells us that our error terms are oscillating between finite values, which is a desirable trait since this reassures us that they will not explode. We call pattern this ``perfect oscillation''. 
+
+\section{Implicit PDE Methods}
+
+\indent Say we cannot determine the value of $U^{n + 1}_j$ from $\vec{U}^n$. That is, we are unable (or unwilling) to express a future point as a function of the past values. A solution is to set up an implicit expression for $U^{n + 1}_j$, with $U^{n + 1}_j$ appearing on both sides of our equation. This requires us solve an equation (or system of equations) at each step to compute $U^{n + 1}_j$. The gain for this extra work is greater stability.
+
+\subsection{BTCS}
+
+\indent The first implicit method we will discuss is the \underline{backwards in time, central in space} (BTCS) algorithm. We approximate $\frac{\partial u}{\partial t}$ at point $(x_j, t_{n + 1})$ by 
+\begin{equation*}
+	\partial_t u^{n+1}_j \approx \frac{ u^{n + 1}_j - u^n_j }{ \Delta t } = \delta^-_t u^{n + 1}_j
+\end{equation*}
+
+and we approximate the second spatial derivative $\frac{ \partial^2 u }{ \partial x^2 }$ at $(x_j, t_{n + 1})$ by
+\begin{align*}
+	\partial_x u^{n + 1}_j &\approx \frac{ u^{n + 1}_j - u^n_{j - 1} }{ \Delta x } \quad \text{(we first use the backwards $\delta^-_x$)} \\
+	\partial^2_x u^{n + 1}_j &\approx \partial_x \frac{ u^{n + 1}_j - u^n_{j - 1} }{ \Delta x } \\
+	&= \frac{ [u^{n + 1}_{j + 1} - u^{n + 1}_j] - [u^{n + 1}_j - u^{n + 1}_{j - 1}] }{ (\Delta x)^2 } \quad \text{(we now use the forwards $\delta^+_x$)} \\
+	&= \frac{ u^{n + 1}_{j + 1} - 2u^{n + 1}_j + u^{n + 1}_{j - 1} }{ (\Delta x)^2 } = \delta^+_x\delta^-_x u^{n + 1}_j
+\end{align*}
+
+Then, the discretized balance equations are
+\begin{equation*}
+	\frac{ U^{n + 1}_j - U^n_j }{ \Delta t } = \frac{ U^{n + 1}_{j + 1} - 2U^{n + 1}_j + U^{n + 1}_{j - 1} }{ (\Delta x)^2 }
+\end{equation*}
+
+Rearranging yields
+\begin{align*}
+	U^{n + 1}_j - U^n_j &= \frac{\Delta t}{(\Delta x)^2} \left( U^{n + 1}_{j + 1} - 2U^{n + 1}_j + U^{n + 1}_{j - 1} \right) \\
+	U^{n + 1}_j &= U^n_j + \nu \left( U^{n + 1}_{j + 1} - 2U^{n + 1}_j + U^{n + 1}_{j - 1} \right) \quad \text{for } \nu = \frac{\Delta t}{(\Delta x)^2}
+\end{align*}
+
+or equivalently
+\begin{equation*}
+	U^n_j = -\nu U^{n + 1}_{j + 1} + (1 + 2\nu)U^{n + 1}_j - \nu U^{n + 1}_{j - 1}
+\end{equation*}
+
+for $0 < j < J$. In vector notation we may write
+\begin{align*}
+	{\bf B} \vec{U}^{n + 1} &= \vec{U}^n + \vec{q}^n \quad 0 \leq n \leq N - 1 \\
+	\vec{U}^n &= {\bf B}\vec{U}^{n + 1} - \vec{q}^n
+\end{align*}
+
+or, expanding the terms,
+\begin{align*}
+	\vec{U}^n &=  -\nu U^{n + 1}_{j + 1} + (1 + 2\nu)U^{n + 1}_j - \nu U^{n + 1}_{j - 1} \\
+	\begin{bmatrix}
+		U^n_1 \\
+		\vdots \\
+		U^n_j \\
+		\vdots \\
+		U^n_{J - 1}
+	\end{bmatrix} 
+	&=
+	\begin{bmatrix}
+		(1 - 2\nu) & -\nu & 0 & \cdots & 0 & 0 & 0 \\
+		-\nu & (1 - 2\nu) & -\nu & \cdots & 0 & 0 & 0 \\
+		0 & -\nu & (1 - 2\nu) & \cdots & 0 & 0 & 0 \\
+		\vdots & \vdots & \vdots & \ddots & \vdots & \vdots & \vdots \\
+		0 & 0 & 0 & \cdots & 0 & -\nu & (1 - 2\nu) 
+	\end{bmatrix} \times
+	\begin{bmatrix}
+		U^{n + 1}_1 \\
+		\vdots \\
+		U^{n + 1}_j \\
+		\vdots \\
+		U^{n + 1}_{J - 1}
+	\end{bmatrix} - 
+	\begin{bmatrix}
+		\nu \cdot \alpha( (n + 1)\Delta t ) \\
+		0 \\
+		\vdots \\
+		0 \\
+		\nu \cdot \beta( (n + 1)\Delta t )
+	\end{bmatrix}
+\end{align*}
+
+with initial conditions, letting $u(x, 0) = \lambda(x)$,
+\begin{equation*}
+	\vec{U}^0 =
+	\begin{bmatrix}
+		\lambda(x_1) \\
+		\vdots \\
+		\lambda(x_j) \\
+		\vdots \\
+		\lambda(x_{J - 1})
+	\end{bmatrix}
+\end{equation*}
+
+\indent So, in order to compute $\vec{U}^{n + 1}$ we solve the linear system $\vec{U}^n = {\bf B}\vec{U}^{n + 1} - \vec{q}^n$ at each iteration in $n$.
+
+
+\subsubsection{Error Bounds}
+\indent Earlier we stated that the advantage of implicit schemes is an increase in stability and so we should comment on the error analysis of the BTCS method. Given the Dirichlet boundary conditions we have that the error along the boundaries are zero,
+\begin{equation*}
+	E^{n + 1}_0 = E^{n + 1}_J = 0
+\end{equation*}
+
+and we may write the error at each node $(x_j, t_{n + 1})$ as
+\begin{equation*}
+	-\nu E^{n + 1}_{j + 1} + (1 + 2\nu)E^{n + 1}_j - \nu E^{n + 1}_{j - 1} = E^n_j + \Delta t T^{n + 1}_j
+\end{equation*}
+
+where the truncation error at node $T^{n + 1}_j$ is
+\begin{equation*}
+	T^{n + 1}_j = \delta^-_t U^{n + 1}_j - \delta^-_x\delta^-_x U^{n + 1}_j
+\end{equation*}
+
+In matrix form we have
+\begin{equation*}
+	({\bf I} - \nu{\bf A}){\bf E}^{n + 1} = {\bf E}^n + \Delta t {\bf T}^{n + 1}
+\end{equation*}
+
+and we can show that, similar to the FTCS case, the eigenvalues of $({\bf I} - \nu{\bf A})$ lie in the interval $(1, 1 + 4\nu)$. That is, we are guaranteed to have all eigenvalues greater than 1: This is good news! We didn't have this before. With eigenvalues greater than 1, we are assured that the matrix $({\bf I} - \nu{\bf A})$ is invertible permitting us the application of some fun matrix algebra tricks on our problem. We have
+\begin{equation*}
+	{\bf E}^{n + 1} = \left({\bf I} + \nu{\bf A}\right)^{-1} \left({\bf E}^n + \Delta t {\bf T}^{n + 1} \right)
+\end{equation*}
+
+With the ``scaled $L_2$ norm''
+\begin{equation*}
+	\norm{\nu}^2_2 = \frac{1}{J + 1} \sum^J_{k = 0} |\nu_j|^2
+\end{equation*}
+
+we have
+\begin{equation*}
+	\norm{ {\bf E}^{n + 1} }_2 \leq \norm{ {\bf E}^n }_2 + \Delta t \norm{ {\bf T}^{n + 1} }_2
+\end{equation*}
+
+\indent The key is that the error here no longer is dependent on $\nu$. We say that the cumulative error bound is unconditional on $\nu$ (i.e. no stability restriction with respect to time or space step granularity). Taking the max error over our grid we have
+\begin{equation*}
+	\max_{0 \leq n \leq N} \norm{ {\bf E}^n }_2 \leq c_1 T\Delta t + c_2 T (\Delta x)^2 
+\end{equation*}
+
+for constants $c_1, c_2$ proportional $u_{tt}, u_{xxxx}$.
+
+\subsection{Crank-Nicolson Implicit Finite Difference Method}
+
+\indent The idea behind the Crank-Nicolson method is to ``average'' the FTCS and BTCS algorithms.\footnote{There are also PDE schemes that apply weighted averages to the FTCS and BTCS algorithms which have advantages when dealing with certain PDEs.}~That is, the Crank-Nicolson scheme adds the balance equations for the FTCS and BTCS algorithms and divides by 2. For the heat equation with get the Crank-Nicolson balance equation
+\begin{equation*}
+	U^{n + 1}_j = \frac{1}{2}\nu U^{n + 1}_{j + 1} + \frac{1}{2}( 1 - 2\nu )U^n_j + \frac{1}{2}\nu U^n_{j - 1} + \frac{1}{2} U^n_j + \frac{1}{2} \nu \left( U^{n + 1}_{j + 1} - 2U^{n + 1}_j + U^{n + 1}_{j - 1} \right)
+\end{equation*}
+
+\indent Collecting terms, with all the $n + 1$ terms on the LHS and all $n$ terms on the RHS, we get
+\begin{equation*}
+	U^{n + 1}_j - \frac{1}{2}\nu \left( U^{n + 1}_{j + 1} - 2U^{n + 1}_j + U^{n + 1}_{j - 1} \right) = U^n_j + \frac{1}{2}\nu \left( U^n_{j + 1} - 2U^n_j + U^n_{j - 1} \right) 
+\end{equation*}
+
+\indent So, we have set up our equation such that the values $U^{n + 1}_j,~U^{n + 1}_{j - 1}$ and $U^{n + 1}_{j + 1}$ determined by $U^n_j,~U^n_{j - 1}$, and $U^n_{j + 1}$. As a linear system we write
+\begin{equation*}
+	{\bf B}\vec{U}^{n + 1} = {\bf F}\vec{U}^n + \vec{r}^n \quad 0 \leq n \leq N - 1
+\end{equation*}
+
+with
+\begin{align*}
+	{\bf B} &= \textrm{tridiag}\left( -\frac{1}{2}\nu, (1 + \nu), -\frac{1}{2}\nu \right) \in (J - 1) \times (J - 1) \\
+	{\bf F} &= \textrm{tridiag}\left( \frac{1}{2}\nu, (1 - \nu), \frac{1}{2}\nu \right) \in (J - 1) \times (J - 1)
+\end{align*}
+
+and $\vec{r}$ is the ``average'' of the boundary conditions from the FTCS \& BTCS algorithms
+\begin{equation*}
+	\vec{r}^n =
+	\begin{bmatrix}
+		\frac{1}{2} \nu \cdot \left[ \alpha(n\Delta t) + \alpha((n + 1)\Delta t) \right] \\
+		0 \\
+		\vdots \\
+		0 \\
+		\frac{1}{2} \nu \cdot \left[ \beta(n\Delta t) + \beta((n + 1)\Delta t) \right]
+	\end{bmatrix}
+\end{equation*}
+
+\indent The stability of the Crank-Nicolson algorithm turns out to be unconditional on $\nu$ as in the BTCS method (good!) and the truncation error is $\mathcal O\left( (\Delta t)^2 + (\Delta x)^4 \right)$. In general, we see faster convergence using the Crank-Nicolson approach than the BTCS approach, but keeping the same stability (very good!).
+
+\section{The Binomial Model as a Finite Difference Problem}
+
+\indent Lets go back to how the binomial model was specified and see if we can recover how it is just a special case of a finite difference method. We will apply the FTCS algorithm on the Black-Scholes PDE:
+\begin{equation*}
+	\frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2S^2\frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV = 0
+\end{equation*}
+
+We perform the substitution $x = \log S$, so
+\begin{align*}
+	\frac{ \partial V }{ \partial S } &= \frac{ \partial V }{ \partial x}\frac{\partial x }{ \partial S } = \frac{1}{S} \frac{ \partial V }{ \partial x } \\
+	\frac{ \partial^2 V }{ \partial S^2 } &= \frac{ \partial }{ \partial S} \left( \frac{1}{S} \frac{ \partial V }{ \partial x } \right) \\ 
+	&= -\frac{1}{S^2} \frac{ \partial V }{ \partial x } + \frac{1}{S^2} \frac{ \partial V }{ \partial x }
+\end{align*}
+
+leaving us with
+\begin{equation*}
+	\frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2\frac{\partial^2 V}{\partial x^2} + \left(r - \frac{1}{2}\sigma^2\right)\frac{\partial V}{\partial x} - rV = 0
+\end{equation*}
+
+Then, we let $V = e^{rt}W$ (i.e. we undiscount the value of the contingent claim), so
+\begin{align*}
+	\frac{ \partial V }{ \partial t } &= re^{rt}W + e^{rt} \frac{ \partial W }{ \partial t } \\
+	\frac{ \partial V }{ \partial x } &= e^{rt} \frac{ \partial W }{ \partial x } \\
+	\frac{ \partial^2 V }{ \partial x^2 } &= e^{rt}\frac{ \partial^2 W }{ \partial x^2 }
+\end{align*}
+
+leaving us with
+\begin{align*}
+	\left[ re^{rt}W + e^{rt} \frac{ \partial W }{ \partial t } \right] + \frac{1}{2}\sigma^2 \left[ e^{rt}\frac{ \partial^2 W }{ \partial x^2 } \right] + \left(r - \frac{1}{2}\sigma^2\right) \left[ e^{rt} \frac{ \partial W }{ \partial x } \right] - r\left[ e^{rt}W \right] &= 0 \\
+	re^{rt}W + e^{rt} \frac{ \partial W }{ \partial t } + \frac{1}{2}\sigma^2 e^{rt}\frac{ \partial^2 W }{ \partial x^2 } + \left(r - \frac{1}{2}\sigma^2\right) e^{rt} \frac{ \partial W }{ \partial x } - re^{rt}W &= 0 \\
+	\frac{\partial W}{\partial t} + \frac{1}{2}\sigma^2\frac{\partial^2 W}{\partial x^2} + \left(r - \frac{1}{2}\sigma^2\right) \frac{\partial W}{\partial x} &= 0
+\end{align*}
+
+We use the approximations
+\begin{align*}
+	\frac{\partial W}{\partial t} &\approx \delta^-_t W^{n + 1}_j = \frac{W^{n + 1}_j - W^n_j}{\Delta t} \\
+	\frac{\partial W}{\partial x} &\approx \delta^-_x W^{n + 1}_j = \frac{W^{n + 1}_{j} - W^{n + 1}_{j - 1}}{\Delta x} \\
+	\frac{\partial^2 W}{\partial x^2} &\approx \delta^+_x\delta^-_x W^{n + 1}_j = \frac{W^{n + 1}_{j + 1} - 2W^{n + 1}_j - W^{n + 1}_{j - 1}}{(\Delta x)^2}
+\end{align*}
+
+and so our PDE is approximated by
+\begin{equation*}
+	\left(\frac{W^{n + 1}_j - W^n_j}{\Delta t}\right) + \frac{1}{2}\sigma^2 \left( \frac{W^{n + 1}_{j + 1} - 2W^{n + 1}_j - W^{n + 1}_{j - 1}}{(\Delta x)^2} \right) + \left(r - \frac{1}{2}\sigma^2 \right) \left( \frac{W^{n + 1}_{j + 1} - W^{n + 1}_{j - 1}}{\Delta x} \right) = 0
+\end{equation*}
+
+Letting $(\Delta x)^2 = \sigma^2\Delta t$ we find
+\begin{align*}
+	\left(\frac{W^{n + 1}_j - W^n_j}{\Delta t}\right) + \frac{1}{2}\sigma^2 \left( \frac{W^{n + 1}_{j + 1} - 2W^{n + 1}_j - W^{n + 1}_{j - 1}}{ \sigma^2\Delta t } \right) + \left(r - \frac{1}{2}\sigma^2 \right) \left( \frac{W^{n + 1}_{j + 1} - W^{n + 1}_{j - 1}}{ \sigma\sqrt{\Delta t} } \right) &= 0 \\
+	W^{n + 1}_j - W^n_j + \frac{1}{2} \left( W^{n + 1}_{j + 1} - 2W^{n + 1}_j - W^{n + 1}_{j - 1} \right) + \frac{\sqrt{\Delta t}}{\sigma}\left(r - \frac{1}{2}\sigma^2 \right) \left( W^{n + 1}_{j + 1} - W^{n + 1}_{j - 1} \right) &= 0 \\
+	- W^n_j + \frac{1}{2} \left( W^{n + 1}_{j + 1}- W^{n + 1}_{j - 1} \right) + \frac{\sqrt{\Delta t}}{\sigma}\left(r - \frac{1}{2}\sigma^2 \right) \left( W^{n + 1}_{j + 1} - W^{n + 1}_{j - 1} \right) &= 0 \\
+	\frac{1}{2} \left( W^{n + 1}_{j + 1}- W^{n + 1}_{j - 1} \right) + \frac{\sqrt{\Delta t}}{\sigma}\left(r - \frac{1}{2}\sigma^2 \right) \left( W^{n + 1}_{j + 1} - W^{n + 1}_{j - 1} \right) &= W^n_j \\
+	\left( W^{n + 1}_{j + 1} - W^{n + 1}_{j - 1} \right) \left( \frac{1}{2} + \frac{\sqrt{\Delta t}}{\sigma}\left(r - \frac{1}{2}\sigma^2 \right) \right) &= W^n_j \\
+	\left( W^{n + 1}_{j + 1} - W^{n + 1}_{j - 1} \right) \left( \frac{1}{2} + \sqrt{\Delta t} \left( \frac{r}{\sigma} - \frac{\sigma}{2} \right) \right) &= W^n_j 
+\end{align*}
+
+and letting
+\begin{equation*}
+	\tilde{p} = \left( \frac{1}{2} + \sqrt{\Delta t}\left( \frac{r}{\sigma} - \frac{\sigma}{2} \right) \right)
+\end{equation*}
+
+we note that\footnote{This is not correct. Line 3 is a mistake.}
+\begin{align*}
+	-\tilde{p} &= -\left( \frac{1}{2} + \sqrt{\Delta t} \left( \frac{r}{\sigma} - \frac{\sigma}{2} \right) \right) \\
+	&= -\frac{1}{2} - \sqrt{\Delta t} \left( \frac{r}{\sigma} - \frac{\sigma}{2} \right) \\
+	&= 1 - \frac{1}{2} - \sqrt{\Delta t} \left( \frac{r}{\sigma} - \frac{\sigma}{2} \right) \\
+	&= 1 - \tilde{p}
+\end{align*}
+
+so we are left with
+\begin{equation*}
+	\tilde{p}W^{n + 1}_{j + 1} + (1 - \tilde{p}) W^{n + 1}_{j - 1} = W^n_j 
+\end{equation*}
+
+and transforming back to $V$ we get
+\begin{equation*}
+	V^n_j = e^{-r\Delta t}\left( \tilde{p}V^{n + 1}_{j + 1} + (1 - \tilde{p})V^{n + 1}_{j - 1}\right)
+\end{equation*}
+
+which is identical to the binomial model. This $(\Delta x)^2 = \sigma^2\Delta t$ puts the method ``on the edge of stability/instability''. This explains the oscillations in error we see between the binomial and Black-Scholes ``true'' solution when pricing options if we increase the number of time steps in the binomial tree.
+
+
+
+
+\end{document}

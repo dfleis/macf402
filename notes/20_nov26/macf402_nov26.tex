@@ -1,0 +1,379 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{bm} % bold in mathmode \bm
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}} % \vec command
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+
+\newcommand{\bigtau}{\text{{\large $\bm \tau$}}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Risk Management}
+\date{November 26 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Risk Management}
+\begin{enumerate}
+	\item Market risk: Loss arising from changes in values of traded assets in a portfolio
+	\item Credit risk: Default by a counterparty
+	\item Liquidity risk: Inability to meet obligations by liquidating positions with little price impact
+	\item Operational risk: Inadequate/failed processes/people/systems or some external events (also flawed models) 
+	\item Legal risk: Enforcability of contracts
+\end{enumerate}
+
+\section{Value-at-Risk as a Measure of Market Risk}
+
+\begin{definition} \underline{Value-at-Risk} (VaR) is a threshold level such that the probability of a loss on an asset/portfolio of assets over a given horizon exceeds that level.
+\end{definition}
+
+The mathematical intuition for VaR is that for some loss $L$ we want to minimize
+\begin{equation*}
+	\P( L > x ) = \alpha
+\end{equation*}
+
+\indent We note that $L$ is a negative quantity since we define a loss to be negative value. We see that VaR has two important parameters $h$ and $\alpha$, which may or may not be specified.
+\begin{enumerate}
+	\item Significance level $\alpha \in (0, 1)$ (or confidence level $1 - \alpha$.
+	\item Risk/trading horizon $h$: The time period over which we are calculating the VaR.
+\end{enumerate}
+
+\indent Let $\Pi_t$ denote the portfolio value at the time $t$. The discount factor over the interval $(t, t + h)$ will be denoted as $Z(t, t + h)$. If we have a constant continuously compounded interest rate $j$ then 
+\begin{equation*}
+	Z(t, t + h) = e^{-jh}
+\end{equation*}
+
+\indent Alternatively we could use zero-coupon bonds at time $t$ maturity at $t + h$ but this is rather unlikely to be observed in the wild. If we look at the discounted PnL\footnote{Often times the time horizon $h$ is sufficiently small for us to ignore discounting since this just introduces complexity for little gain.}~over the interval $(t, t + h)$, denoting $G_h$ to be the gain over the horizon $h$,
+\begin{equation*}
+	G_h := \Delta\Pi_t = Z(t, t + h)\Pi_{t + h} - \Pi_t
+\end{equation*}
+
+so we write
+\begin{equation*}
+	-G_h
+\end{equation*}
+
+to be the present value of a loss. In order to do anything we need to know the distribution of $-G_h$. Critically, VaR is the present value of the largest permissible loss amount that would be exceeded with only a probability $\alpha$ over a trading period of $h$ days.
+
+\begin{definition}
+\begin{equation*}
+	\text{VaR}_{\alpha, h} = \inf \left\{ x \in \R: \P(G_n > x) \leq 1 - \alpha \right\}
+\end{equation*}
+
+or, more intuitively
+\begin{equation*}
+	\text{VaR}_{\alpha, h} = -\inf \left\{ x \in \R: F_{G_h}(x) \geq \alpha \right\}
+\end{equation*}
+
+where
+\begin{equation*}
+	F_{G_h}(x) = \P(G_h \leq x)
+\end{equation*}
+
+is the CDF of $G_h$. We may visualize this as the cut-off of some left-tail of a CDF at some coordinate $x_\alpha = g_{\alpha, h}$ with height $F_{G_h}(x_\alpha) = \alpha$.
+\end{definition}
+
+For a continuous price model with a strictly increasing CDF for $G_h$ we must solve
+\begin{equation*}
+	F_{G_h}(x) = \alpha
+\end{equation*}
+
+for $x$. Then, the VaR is the $\alpha$ quantile of the discounted $h$ day PnL distribution. In this case we have
+\begin{equation*}
+	\text{VaR}_{\alpha, h} = -g_{\alpha, h}
+\end{equation*}
+
+where 
+\begin{equation*}
+	\P ( G_h \leq g_{\alpha, h} ) = \alpha
+\end{equation*}
+
+\indent VaR measures losses and is usually reported as a positive quantity corresponding to a potential loss. 
+
+\subsection{VaR in terms of Returns}
+
+Sometimes it is easier to model prices through their returns instead of prices directly. So, our discounted gain in returns is
+\begin{equation*}
+	\frac{ Z(t, t + h) \Pi_{t + h} - \Pi_t }{ \Pi_t }
+\end{equation*}
+
+and we are concerned with the quantity
+\begin{equation*}
+	\P \left( 	\frac{ Z(t, t + h) \Pi_{t + h} - \Pi_t }{ \Pi_t } < r_{\alpha, h} \right) = \alpha
+\end{equation*}
+
+and the VaR is
+\begin{equation*}
+	\text{VaR}_{\alpha, h} = 
+	\begin{cases}
+		-r_{\alpha, h} & \text{as a percent of the portfolio value $\Pi_t$} \\
+		-r_{\alpha, h} & \text{as the directly value of $\Pi_t$}
+	\end{cases}
+\end{equation*}
+
+\indent We find that the parameters $\alpha$ and $h$ give us a value that has only a $100\cdot\alpha\%$ chance of being exceeded by the loss from some investment strategy. \\
+
+\subsection{Other Considerations}
+
+\indent We should take a moment to note that VaR tells us nothing about what the incurred loss will be (i.e. we don't know what the conditional distribution of the tail is), only that the tail begins at some value specified by $\alpha$ and $h$. \\
+
+\subsubsection{Regulation}
+
+\indent Regulators require VaR to be computed daily with some reasonably high confidence level varying based on the particular regulating agency, current regulating requirements, etc. For example, Basel II requires (sufficiently large) banks to test VaR at a 99\% confidence level for an 10 day holding period. However, this particular implementation is insufficient for many reasons, not the least of which is that they period the 10 day VaR to be approximated as a scaled 1 day VaR.
+
+\subsubsection{Long \& Short Positions}
+
+Note that the holder of a portfolio will suffer a loss if
+\begin{align*}
+	G_h &< 0 \quad \text{for a long position} \\
+	G_h &> 0 \quad \text{for a short position}
+\end{align*}
+
+\subsubsection{Risk Factors}
+
+\indent In order to successfully model VaR we need need a competent framework to model the underlying risk factor manipulating the portfolio dynamics. For example we can assume that portfolio returns are normally distributed, i.e.
+\begin{equation*}
+		\frac{ Z(t, t + h) \Pi_{t + h} - \Pi_t }{ \Pi_t } \sim N \left( \mu, \sigma^2 \right)
+\end{equation*}
+
+as in JP Morgan's Risk Metrics software. Now, say $R_h$ is the portfolio returns over an $h$ day interval. Then,
+\begin{equation*}
+	R_h = \mu + \sigma Z \quad Z \sim N(0, 1)
+\end{equation*}
+
+and so we have that
+\begin{equation*}
+	\text{VaR} = -Z_\alpha \sigma - \mu
+\end{equation*}
+
+\begin{proof} From the definition of VaR we have
+\begin{align*}
+	\P(R_h \leq \text{VaR}_{\alpha, h}) &= \P ( R_h \leq Z_\alpha\sigma + \mu ) \\
+	&= \P ( \mu + \sigma Z \leq Z_\alpha \sigma + \mu) \\
+	&= \P (Z \geq Z_\alpha) = 1 - \alpha
+\end{align*}
+
+as desired.
+\end{proof}
+
+\indent However, in general, the normality assumption should be tested (with QQ plots or something). Usually we see that returns exhibit fatter tails than the normal distribution.
+
+\underline{Example} (a): Suppose that the price of a risky asset follows
+\begin{equation*}
+	dS_t = \mu S_t \,dt + \sigma S_t\,dS_t
+\end{equation*}
+
+\indent Give an explicit expression for the approximate 95\% VaR of a short position in the asset over some time interval $\Delta t$. \\
+
+\underline{Solution (a)}: We know that
+\begin{align*}
+	S_t &= S_0 e^{(\mu - \frac{1}{2}\sigma^2) t + \sigma W_t} \\
+	\implies \ln S_t &= \ln S_0 + \left( \mu - \frac{1}{2}\sigma^2 \right)t + \sigma W_t
+\end{align*}
+
+So,
+\begin{equation*}
+	\implies \ln S_{\Delta t} = \ln S_0 + \left( \mu - \frac{1}{2}\sigma^2 \right)\Delta t + \sigma W_{\Delta t}
+\end{equation*}
+
+and define
+\begin{equation*}
+	X_{\Delta t} = \ln S_{\Delta t} - \left( \mu - \frac{1}{2}\sigma^2 \right) \Delta t
+\end{equation*}
+
+as our risk factor. We see that $X_{\Delta t} \sim N \left( \ln S_0, \sigma^2 \Delta t \right)$ and note that we have the change in returns
+\begin{equation*}
+	\Delta S = \frac{S_{t + h} - S_t}{ S_t } = \frac{ \Delta S_{t + \Delta t} }{ S_t } 
+\end{equation*}
+
+\indent We have a short position in some asset and we're interested in the probability of a loss from the short exposure. We want to find $\P(\Delta S < x) = \alpha$. Looking at the log returns we get
+\begin{align*}
+	\alpha &= \P ( \ln \Delta S < \ln x ) \\
+	&= \P \left( \frac{ \ln \Delta S - \left( \mu - \frac{1}{2}\sigma^2 \right) \Delta t }{\sigma\sqrt{\Delta t}} < \frac{ \ln x - \left( \mu - \frac{1}{2}\sigma^2 \right) \Delta t }{\sigma\sqrt{\Delta t}} \right) \\ 
+	&= \P \left( Z < \frac{ \ln x - \left( \mu - \frac{1}{2}\sigma^2 \right) \Delta t }{\sigma\sqrt{\Delta t}} \right)
+\end{align*}
+
+Thus, we should set the quantile $Z_\alpha$ to 
+\begin{equation*}
+	Z_\alpha  = \frac{ \ln x - \left( \mu - \frac{1}{2}\sigma^2 \right) \Delta t }{ \sigma\sqrt{\Delta t}}
+\end{equation*}
+
+Solving for $x$
+\begin{equation*}
+	x = e^{(\mu - \frac{1}{2}\sigma^2)\Delta t + Z_\alpha\sigma\sqrt{\Delta t}}
+\end{equation*}
+
+Therefore, for our short position we find that the VaR in terms of log returns in
+\begin{equation*}
+	\text{VaR}_\alpha = e^{(\mu - \frac{1}{2}\sigma^2)\Delta t + Z_\alpha\sigma\sqrt{\Delta t}}
+\end{equation*}
+
+\indent {\em ``This wasn't the most intuitive way to derive this solution, normally we would use a $\Delta$-Normal approximation to VaR.''}
+
+\subsection{$\Delta$-Normal Approximation to VaR}
+
+\indent Suppose we have a set of risk factors $\mathcal X$ such that the changes in the risk factors are each normally distributed
+\begin{equation*}
+	\Delta X \sim N \left(\mu, \sigma^2 \right)
+\end{equation*}
+
+and denote the change in the risk factor as
+\begin{equation*}
+	\Delta X := X_{t + h} - X_t
+\end{equation*}
+
+Then, if a portfolio with value $V(X_t)$ is approximated with the first-order approximation\footnote{This is a first-order approximation, in principle we can include higher order derivatives to include convexity terms and beyond.}
+\begin{align*}
+	\Delta V &= V(X_{t + h}) - V(X_t) \\
+	&\approx V'(X_t) \Delta X
+\end{align*}
+
+and since $\Delta X$ is normally distributed we have that
+\begin{equation*}
+	V'(X_t)\Delta X \sim N \left(0, [V'(X_t)]^2\sigma^2 \right)
+\end{equation*}
+
+\underline{Example (b)}: Use the $\Delta$-Normal approximation to solve Example (a). \\
+
+\underline{Solution (b)}: From (a) we had that
+\begin{equation*}
+	S_t = S_0 e^{(\mu - \frac{1}{2}\sigma^2)t + \sigma W_t}
+\end{equation*}
+
+We define our risk factor $X_t$ as\footnote{This formulation of the risk factor is particularly convenient in the chain rule.}
+\begin{equation*}
+	X_t = \ln S_t - \ln S_0 - \left( \mu - \frac{1}{2}\sigma^2 \right)t
+\end{equation*}
+
+and note that
+\begin{equation*}
+	e^{X_t + (\mu - \frac{1}{2}\sigma^2)t} = \frac{S_t}{S_0}
+\end{equation*}
+
+So we may write the value of our short position (in returns) as
+\begin{equation*}
+	V_t =  \frac{S_t}{S_0} = e^{X_t + (\mu - \frac{1}{2}\sigma^2)t}
+\end{equation*}
+
+But note
+\begin{equation*}
+	V'(X_t) = \frac{\partial V}{\partial X_t} = e^{X_t + (\mu - \frac{1}{2}\sigma^2)t} = V(X_t)
+\end{equation*}
+
+and with respect to our short position we want
+\begin{equation*}
+	\alpha = \P (\Delta V < \text{VaR}_\alpha)
+\end{equation*}
+
+but from the $Delta$-Normal approximation we have $V \sim N \left( 0, [V'(X_t)]^2\sigma^2 \right)$, so
+\begin{align*}
+	\P (\Delta V < \text{VaR}_\alpha) &= \P \left( \frac{ \Delta V }{ \sigma \sqrt{\Delta t} V_t } < \frac{ \text{VaR}_\alpha }{ \sigma\sqrt{\Delta t}V_t } \right) \\
+	&\approx \P \left( Z < \frac{ \text{VaR}_\alpha }{ \sigma\sqrt{\Delta t}V_t } \right)
+\end{align*}
+
+Therefore, we set VaR$_\alpha$ to
+\begin{equation*}
+	\text{VaR}_\alpha = Z_\alpha\sigma\sqrt{\Delta t}
+\end{equation*}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

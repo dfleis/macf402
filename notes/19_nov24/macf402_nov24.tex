@@ -1,0 +1,433 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{bm} % bold in mathmode \bm
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}} % \vec command
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+
+\newcommand{\bigtau}{\text{{\large $\bm \tau$}}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Mathematical Finance}
+\date{November 24 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Option Pricing with Different Borrowing \& Lending Rates}
+
+\indent Suppose we have our bank account $S^0$ and some risky asset $S^1$. We now impose the restriction on the bank account that we may not short sell. That is, we are no longer able to borrow at the risk free rate. How does this change our ability to price options? \\
+
+\indent Suppose we are on the real world probability space $(\Omega, \mathcal F, \P)$ with the bank account $S^0$ with rate $r$ and risky assets $S^i$ such that
+\begin{align*}
+	dS^0_t &= r_tS^0_t\,dt \quad S^0_0 = 1 \\
+	dS^i_t &= S^i_t \left[ b_i(t)\,dt + \sum^d_{j = 1} \sigma_{i,j}\,dW_j(t) \right] \quad j = 1, ..., d
+\end{align*}
+
+where $W(t) = (W_1(t), ..., W_d(t))^T$ is a $d$-dimensional Brownian motion. Our investor is not permitted to short $S^0$. That is, the investor may only borrow at some rate $R(t)$ such that 
+\begin{equation*}
+	R(t, \omega) \geq r(t)~\forall_{(t, \omega)~\in~[0, T] \times \Omega}
+\end{equation*}
+
+We introduce a bank account
+\begin{equation*}
+	dP^-(t) = P^-(t)R(t)\,dt \quad P^-(0) = 1
+\end{equation*}
+
+\indent Assume that we cannot hold a positive number of units of $P^-$ (i.e. we may only borrow $P^-$ and cannot invest in $P^-$). Let $X(t)$ be the wealth at time $t$ and $x$ be the initial wealth. Let
+\begin{equation*}
+	\vec{\Pi}(t) = \left( \Pi_1(t), ..., \Pi_d(t) \right)^T
+\end{equation*} 
+
+be the vector of \underline{proportions} of wealth invested in the asset processes $S^i$. We have some technical requirements for $\Pi(t)$: It must be adapted to our filtration $\mathcal F_t$ and
+\begin{equation*}
+	\int^T_0 \norm{ \vec{\Pi}(t) X(t) }^2\,dt < \infty	\quad \text{a.s.}
+\end{equation*}
+
+\indent We impose these requirements so that we cannot have our wealth process explode in a finite amount of time (i.e. no infinite wealth in some time interval). We have the fraction of wealth invested in the bank account as
+\begin{equation*}
+	1 - \vec{\Pi}^T(t) \mathds {\vec{1}}
+\end{equation*}
+
+which should be positive when lending and negative when borrowing. Under self-financing strategies we have
+\begin{equation*}
+	dX(t) = X(t) \left[ \left( 1 - \vec{\Pi}^T(t) \mathds {\vec{1}} \right)r(t)\,dt + \vec{\Pi}^T(t) \Big( b(t)\,dt + \sigma(t)\,dW(t) \Big) \right] \quad X(0) = 0
+\end{equation*}
+
+where the dimensions of the vectors are
+\begin{align*}
+	\vec{\Pi}^T(t) &: d \times 1 \\
+	b(t) &: d \times 1 \\
+	\sigma(t) &: d \times d \\
+	dW(t) &: d \times 1  
+\end{align*}
+
+This gives us an \underline{admissible} wealth process if $X(t) \geq 0~\forall_{t\in[0,T]}$ a.s. If we enforce borrowing at the higher rate $R(t)$ from account $P^-$ we have
+\begin{align*}
+	\text{invest } \left(  1 - \vec{\Pi}^T(t) \mathds{\vec{1}} \right)^+ \text{ in } S^0(t) \\
+	\text{borrow } \left( 1 - \vec{\Pi}^T(t) \mathds{\vec{1}} \right)^- \text{ in } P^-(t) \\
+\end{align*}
+
+where $(x)^+$ and $(x)^-$ mean the max/min of $x$ and 0, respectively. For a self-financing strategy the wealth equation becomes
+\begin{equation*}
+	dX(t) = X(t) \left[ \left(  1 - \vec{\Pi}^T(t) \mathds{\vec{1}} \right)^+ r(t)\,dt + \left(  1 - \vec{\Pi}^T(t) \mathds{\vec{1}} \right)^- R(t)\,dt + \vec{\Pi}^T(t) \Big( b(t)\,dt + \sigma(t)\,dW(t) \Big) \right]
+\end{equation*}
+
+For some invertible covariance matrix $\sigma(t)$, let the market price of risk be
+\begin{equation*}
+	\theta_0(t) = \sigma^{-1}(t) \left[ b(t) - r(t) \mathds {\vec{1}} \right]
+\end{equation*}
+
+By Girsanov's Theorem we have that
+\begin{equation*}
+	W_0(t) = W(t) + \int^t_0 \theta^T_0(s)\,ds
+\end{equation*}
+
+is a $d$-dimensional Brownian motion with respect to a new measure $\P_0$ defined by
+\begin{equation*}
+	\P_0(A) = \E_\P \left[ Z_0(T) \mathds 1_A \right] \quad \forall_{A \in \mathcal F_T}
+\end{equation*}
+
+where $Z$ is the stochastic exponential martingale of $\theta$, as defined in the notes before (in the change of measure notes).
+
+\begin{theorem}{} Let $B$ be a non-negative $\mathcal F_T$-measurable random variable. The fair price of $B$ at time $t = 0$ is given by
+\begin{equation*}
+	p^0 = \E_{\P_0} \left[ \gamma_0(T) B \right]
+\end{equation*}
+
+and there exists a unique corresponding hedging portfolio/process (replicating portfolio) $\Pi^0$ with a wealth process satisfying
+\begin{equation*}
+	X(0) = p^0
+\end{equation*}
+\end{theorem}
+
+In our problem we have
+\begin{equation*}
+	\gamma_0(t) = e^{ -\int^t_0 r(s)\,ds }
+\end{equation*}
+
+\indent We say that the ``fair price'' is fair to both buyers and sellers of the contingent claim (i.e. they both may replicate the payoff). If $R(t) > r(t)$ then we should consider the perspective of both the buy and seller of the derivative.
+
+\subsection{The Buyer's Perspective}
+
+\indent Denote the the initial cost of the cheapest hedging strategy that replicates the claim by $p^+$. We should note that this market is no longer necessarily ``complete''. That is, such a hedging strategy is no longer guaranteed to exist! \\
+
+\indent We will consider the spread between rates. Let $V(t)$ be a (progressively measurable) process such that
+\begin{equation*}
+	V(t) \in [0, R(t) - r(t)] \quad \forall_t~\P \text{ a.s.}
+\end{equation*}
+
+\indent We define an auxiliary market $M_V$ with the same assets but with a single bank account with interest rate $r_V(t) = r(t) + V(t)$ (essentially this interest rate is $R(t)$). The use of this auxiliary market is that $M_V$ is now a complete market for every $V$ satisfying
+\begin{equation*}
+	V(t) \in [0, R(t) - r(t)] 
+\end{equation*}
+
+\indent Define $\theta_V(t),~Z_V(t),~W_V(t),~\P_V$ and $\gamma_V(t)$ as before but with the replacement of $r(t)$ by $r_v(t)$. In this market $M_V$ the fair price is
+\begin{equation*}
+	p^V = \E_{\P_V} \left[ \gamma_V(t) B \right]
+\end{equation*}
+
+\indent To compute the fair buying price, suppose we know $p^+$ and the corresponding $\Pi^+$ in advance and define
+\begin{equation*}
+	r^+(t) = r(t) + V^+(t) \quad \forall_{t \in [0, T]}~\P \text{ a.s.}
+\end{equation*}
+
+with
+\begin{equation*}
+	V^+(t) =
+	\begin{cases}
+		0 & \text{if } \left(1 - \vec{\Pi}^+(t)^T \mathds {\vec{1}} \right) > 0 \\
+		R(t) - r(t) & \text{if } \left(1 - \vec{\Pi}^+(t)^T \mathds {\vec{1}} \right) \leq 0
+	\end{cases}
+\end{equation*}
+
+where if $\left(1 - \vec{\pi}^+(t)^T \mathds {\vec{1}} \right) > 0$ implies that ``you don't need to short the asset''. This adjusts the interest we're dealing with so that $\Pi^+$ hedges $B$ in $M_{V^+}$. However, we assumed that we knew $p^+$ and $\Pi^+$ in advance, which is likely not the case in the real world. \\
+
+\indent The cheapest strategy in $M_{V^+}$ should correspond to some strategy in $M_V$. That is, every hedge for $B$ in $M_{V^+}$ should be a hedge for $B$ in some $M_V$, and the investor has at least as good terms for borrowing and lending in every market $M_V$ as compared to $M_V^+$. If initial wealth $x > 0$ then every portfolio with an admissible wealth process in $M_V$ has admissible wealth in $M_V^+$. That is, the terminal wealth in $M_V$ is $\geq$ the terminal wealth in the corresponding $M_{V^+}$. The idea is that the replication of $B$ is cheaper in every market $M_V$ than $M_{V^+}$. \\
+
+If $p^+ = p^V$ then this strategy must be the smallest in $M_{V^+}$.
+
+\begin{lemma} {\em Formalizes the above}. Let $\Pi$ be a portfolio process and $X_V(t),~X_{V^+}(t)$ be the corresponding wealth processes in $M_V$ and $M_{V^+}$. Let $X_V(0) = X_{V^+}(0)$ then
+\begin{equation*}
+	X_V(t) = X_{V^+}(t) \quad \forall_{t\in[0,T]}\text{ a.s.}
+\end{equation*}
+
+if and only if
+\begin{equation*}
+	\big[R(t) - r(t) - V(t)\big]\left( 1 - \vec{\Pi}^T(t) \mathds {\vec{1}} \right)^- + V(t)\left( 1 - \vec{\Pi}^T(t) \mathds {\vec{1}} \right)^+ = 0 \quad \forall_{t\in[0,t]} \text{ a.s.}
+\end{equation*}
+
+\begin{proof} Compare the dynamics of
+\begin{equation*}
+	dX_V(t) = X_V(t) \left[ \left( 1 - \vec{\Pi}^T(t)\mathds {\vec{1}} \right) r_V(t)\,dt + \vec{\Pi}^T(t) \Big( b(t)\,dt + \sigma(t)\,dW(t) \Big) \right]
+\end{equation*}
+
+with that of
+\begin{equation*}
+	dX(t) = X(t) \left[ \left(  1 - \vec{\Pi}^T(t) \mathds{\vec{1}} \right)^+ r(t)\,dt + \left(  1 - \vec{\Pi}^T(t) \mathds{\vec{1}} \right)^- R(t)\,dt + \vec{\Pi}^T(t) \Big( b(t)\,dt + \sigma(t)\,dW(t) \Big) \right]
+\end{equation*}
+
+We have the terms $\vec{\Pi}^T(t) \Big( b(t)\,dt + \sigma(t)\,dW(t) \Big)$ in both processes (i.e. the stock investment process) and using the assumption that $X_V(0) = X_{V^+}(0)$ we have that
+\begin{equation*}
+	X_V(t) = X_{V^+}(t)
+\end{equation*} 
+
+if and only if the bounded variation terms $\,dt$ are equal
+\begin{equation*}
+	\left(  1 - \vec{\Pi}^T(t) \mathds{\vec{1}} \right)^+ r(t) =  \left(  1 - \vec{\Pi}^T(t) \mathds{\vec{1}} \right)^+ r(t) + \left(  1 - \vec{\Pi}^T(t) \mathds{\vec{1}} \right)^- R(t)
+\end{equation*}
+
+\indent That is, starting from the same initial condition (and with the same asset process), the only way to end up with the same process throughout $t$ is for the bounded variation terms to be identical.
+
+\end{proof}
+\end{lemma}
+
+\begin{theorem}{} Let $B$ be a European contingent claim and $V(t)$ be a (progressively measurable) adapted process such that 
+\begin{equation*}
+	V(t) \in [0, R(t) - r(t)] \quad \forall_{t \in [0, T]} \text{ a.s.}
+\end{equation*}
+
+If the hedging strategy $\Pi^V$ replicates $B$ in $M_V$ and satisfies the above
+\begin{equation*}
+	\big[R(t) - r(t) - V(t)\big]\left( 1 - \vec{\Pi}^T(t) \mathds {\vec{1}} \right)^- + V(t)\left( 1 - \vec{\Pi}^T(t) \mathds {\vec{1}} \right)^+ = 0
+\end{equation*}
+
+then $\Pi^V$ is a hedging strategy for $B$ in $M_{V^+}$ and 
+\begin{equation*}
+	p^+ = p^V
+\end{equation*}
+\end{theorem}
+
+The idea is that we will always use the worst-case interest rate to hedge our contingent claim.
+
+
+\begin{corollary} If the portfolio process $\Pi^{R - r}$ corresponding to the contingent claim valuation problem in $M_{R - r}$ 
+\begin{equation*}
+	\Pi^{R - r}(t)^T \mathds {\vec{1}} \geq 1 \quad \forall_{t\in[0,T]} \quad \text{(no lending condition)}
+\end{equation*}
+
+then
+\begin{equation*}
+	p^+ = p^{R - r}
+\end{equation*}
+\end{corollary}
+
+\begin{corollary} If $\Pi^0$, which hedges $B$ in $M_0$ satisfies
+\begin{equation*}
+	\Pi^0(t)^T \mathds {\vec{1}} \leq 1 \quad \forall_{t\in[0,T]} \quad \text{(no borrowing condition)}
+\end{equation*}
+
+that is, we do not need to buy more of the stock, then
+\begin{equation*}
+	p^+ = p^0
+\end{equation*}
+\end{corollary}
+
+\underline{Example (a): European call option} \\
+
+\indent Say $d = 1,~r(t) = r,~b(t) = b,~\sigma(t) = \sigma,$ and $R(t) = R > r$ (i.e. the Black-Scholes model). Then we have
+\begin{equation*}
+	B = (S_1(T) - K)^+
+\end{equation*}
+
+\indent The Black-Scholes formula gives us that we must always borrow to replicate the call and corollary 1 gives us
+\begin{align*}
+	p^+_{Call} &= p^{R - r} \\
+	&= \E_{R - r} \left[ \exp \left\{ (-RT)(S(T) - K)^+ \right\} \right] \\
+	&= BS_{Call}(S, T, R, \sigma)
+\end{align*}
+
+\indent We have that the fair buying price is obtained by substituting $R$ for $r$ in the Black-Scholes call formula. Note that this result is not immediately obvious or trivial. It's plausible that we could have had
+\begin{equation*}
+	p^- < p^+_{Call} < p^{R - r}
+\end{equation*}
+
+\underline{Example (b): European put option} \\
+
+For the corresponding put option we can find that the fair buying price will be
+\begin{align*}
+	p^+_{Put} &= p^0 \quad \text{(Black-Scholes price without changes!)} \\
+	&= BS_{Put}(S, T, r, \sigma)
+\end{align*}
+
+
+\subsection{The Seller's Perspective}
+
+\indent The seller of a contingent claim will want to hedge $-B$ with a replicating portfolio process such that
+\begin{align*}
+	Y(0) &= y < 0 \\
+	Y(T) &= -B
+\end{align*}
+
+We get similar theorems, lemmas, corollaries as in the buyer's perspective, but now with the addition of
+\begin{theorem}{} Let $B$ be a European contingent claim.\footnote{This holds for American options as well.}~Let $V(t)$ be an adapted process satisfying
+\begin{equation*}
+	V(t) = [0, R(t) - r(t)] \quad \forall_{t\in[0,T]} \quad \P \text{ a.s.}
+\end{equation*}
+
+If $\Pi^V$ hedges $B$ in $M_V$ then $\Pi^V$ is a hedging strategy against $-B$ in $M_{V^+}$. Moreover, if 
+\begin{equation*}
+	p^V = \inf \left\{ p_\mu: \mu(t) \in [0, R(t) - r(t)]~\forall_{t\in[0,T]}~\text{a.s.} \right\}
+\end{equation*}
+
+then
+\begin{equation*}
+	p^- = p^V
+\end{equation*}
+\end{theorem}
+
+\underline{Example (a): European call option} \\
+
+\indent We find that $p^V \geq p^0$, so the fair selling price is the same as the Black-Scholes price using interest rate $r$.
+\begin{equation*}
+	p^-_{Call} = BS_{Call}(S, T, r, \sigma)
+\end{equation*}
+
+
+\underline{Example (b): European put option} \\
+
+\indent We have $p^V \geq p^{R - r}$, so the fair selling price is the same as the Black-Scholes price with interest rate $r$.
+\begin{equation*}
+	p^-_{Put} = BS_{Put}(S, T, R, \sigma)
+\end{equation*}
+
+\subsection{Domain of Negotiation}
+
+\indent These fair prices with respect to the buyer and seller are price bounds at which these options are traded. Thus, we have the market price $\in [p^-, p^+]$ and we say that this domain is the ``domain of negotiation'' between buyers and sellers. Note that $p^-$ is the lowest price a seller is willing to accept and $p^+$ the highest price a buyer is willing to pay. It may end up that
+\begin{align*}
+	[p^-, p^+] &= \emptyset \quad \text{(no price is accepted between parties)} \\
+	[p^-, p^+] &= {p} \quad \text{(a singleton price is accepted)}
+\end{align*}
+
+In summary, for a European option we have
+\begin{align*}
+	\text{European call}: p \in \Big[ BS_{Call}(S, T, r, \sigma), BS_{Call}(S, T, R, \sigma) \Big] \\
+	\text{European put}: p \in \Big[ BS_{Put}(S, T, R, \sigma), BS_{Put}(S, T, r, \sigma) \Big]
+\end{align*}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

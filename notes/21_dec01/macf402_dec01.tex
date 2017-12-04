@@ -1,0 +1,324 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{bm} % bold in mathmode \bm
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}} % \vec command
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+\newcommand{\indist}{\,{\buildrel \mathcal D \over \sim}\,}
+
+\newcommand{\bigtau}{\text{{\large $\bm \tau$}}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Risk Management}
+\date{December 1 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Risk Management with Multiple Risk Factors}
+
+\indent We can consider models for VaR with multiple sources of risk. Denote the vector of risk factors as $\vec{R}$ and the changes in risk factors as $\Delta \vec{R}$. Assume that $\Delta \vec{R}$ is normally distributed with means $\vec{\mu}$ and some covariance matrix ${\bf C}$. The first order Taylor approximation gives that the change in portfolio value is
+\begin{equation*}
+	\Delta \Pi = \Pi_t - \Pi_0 \approx \vec{\delta}^T\Delta\vec{R} + \Sigma \quad \Sigma \in \R
+\end{equation*}
+
+where $\vec{\delta}$ is a vector of portfolio (first order) sensitivities with respect to the risk factors (i.e. this can be a vector of Greeks). Then,
+\begin{equation*}
+	\Delta \Pi = \vec{\delta}^T \Delta \vec{R} + \Sigma
+\end{equation*}
+
+has normal distribution with 
+\begin{align*}
+	\text{mean} &= \E \left[ \Delta \Pi - \Sigma \right] = \vec{\delta}^T \E [\Delta \vec{R}] = \vec{\delta}^T \vec{\mu}  \\
+	\text{variance} &= \var \left[ \Delta \Pi - \Sigma \right] = \vec{\delta}^T {\bf C} \vec{\delta}
+\end{align*}
+
+Now, to find VaR we consider
+\begin{equation*}
+	\P (\Delta \Pi \leq -\text{VaR}_\alpha) = 1 - \alpha
+\end{equation*}
+
+\indent In order to actually implement this we need to estimate the model, especially the correlations (which is astonishingly difficult) using historical data or by calibration to current market data (i.e. calibrate to option prices, credit default swaps, etc...)
+
+\subsection{Difficulties}
+
+\begin{enumerate}
+	\item We find that normally distributed models tend to underestimate the likelihood of extreme events. 
+
+	\item For portfolios with derivatives, the change in portfolio value with respect to the risk factors is often non-linear. That is, for derivatives, the first-order $\Delta$ approximation is unacceptable. \\
+	
+	In fact, this can be made worse by using the first-order VaR approximation on dynamic hedging strategies employing linearizations themselves (i.e. $\Delta$-hedged portfolios).	
+\end{enumerate}
+
+\subsection{Alternative Risk Factor Models}
+
+Assume lognormal returns for $i$ assets in some portfolio. We have
+\begin{equation*}
+	R_i \sim N(\mu, \sigma^2), \quad i=1,2,...,n
+\end{equation*}
+
+We can estimate the mean over the trading period by
+\begin{equation*}
+	\hat{\mu}_i = \frac{1}{d} \sum^d_{j = 1} r_{i,j}, \quad j = 1,2,..., d \text{ days}
+\end{equation*}
+
+and the variances by
+\begin{equation*}
+	\hat{\sigma}^2_i = \frac{1}{d - 1} \sum^d_{j = 1} (r_{i,j} - \mu_i)^2
+\end{equation*}
+
+we estimate the covariances between assets similarly. Instead of the using the (log) normality assumption we could have used some fatter-tailed distribution like the asymmetric $t$-distribution. \\
+
+\indent Another alternative would be to use some nonparametric method that avoids the estimation of $\mu$ and $\sigma^2$ altogether. A possibility is to estimate the return density from $d$ samples of asset $i$
+\begin{equation*}
+	\left\{ r_{i,j} \right\}^d_{j = 1}
+\end{equation*}	
+
+and estimate the density by
+\begin{equation*}
+	\hat{f}_d(x) = \frac{1}{dh} \sum^d_{j = 1} K \left( \frac{x - r_{i,j}}{h} \right)
+\end{equation*}
+
+where $K$ is our kernel density function and $h$ the smoothing parameter. If $f$ is a smooth density then this $\hat{f}_d$ is asymptotically unbiased for $f$. The advantage of this method is that it doesn't rely on a specific model but the disadvantage is that it requires some arbitrary selection of $h$ and $K$.
+
+\subsubsection{Backtesting}
+
+\indent Any model that we choose should be backtested with the computed VaR. Suppose that we have some $(1 - \alpha)\%$ 1-day VaR estimate for $h$ days in the past. In order to backtest this VaR we count the number of times $\tau$ that the actual losses exceed the previous days' VaR. If the VaR model is accurate then the probability of some VaR break on any given day should be close to $\alpha$ and the expected number of VaR breaks be $n\alpha$. If we find that $\tau > n\alpha$ then we have underestimated the risk. \\
+
+If we assume that VaR breaks are i.i.d Bernoulli random variables then
+\begin{equation*}
+	\tau \sim \text{Bin}(n, \alpha)
+\end{equation*}
+
+and so by the normal approximation of the Binomial distribution we find
+\begin{equation*}
+	Z \sim \frac{\tau - n\alpha}{\sqrt{n\alpha(1 - \alpha)}}
+\end{equation*}
+
+and we may perform some hypothesis test with an outputted $p$ value to confirm whether or not our data passed a backtest. \\
+
+For 99\% VaR Basel requires tests of $n = 250$ and if 
+\begin{align*}
+	\tau &\leq 4 \quad \text{``Green zone'' -- ``acceptable'', no penalty.} \quad \text{(corresponds to } p > 0.83) \\
+	 5 \leq \tau & \leq 9 \quad \text{``Yellow zone'', some penalty.} \\
+	 \tau &\geq 10 \quad \text{``Red zone'', severe penalty.} 
+\end{align*}
+
+\subsubsection{``More Modern'' Approaches}
+
+\indent We can evaluate the distribution of portfolio changes $\Delta \Pi$ by Monte-Carlo methods.\footnote{These methods are only as good as your model for the asset path $S$.}~We simulate a large number of trajectories for $S$ which gives us realizations for $\Delta \Pi$. These realizations gives an empirical distribution for $\Delta \Pi$. This gets rid of the need for local approximations of the Greeks. \\
+
+\indent In generating the empirical distribution it is important to have a model for $S$ that is as accurate as possible. We can use parameters for our model that are generated from some historical data. We may also consider time series models (GARCH). \\
+
+\indent The big flaw with all these approaches is that they operate under normal market conditions. We also want to consider extraordinary situations (in fact, in risk management this is often what we're most concerned about). A solution could be to consider techniques from Extreme Value Theory to model such extreme scenarios. \\
+
+Suppose we have a set of returns $R_1,..., R_n$ and corresponding order statistics $R_{(1)},...,R_{(n)}$. To look at the worst case scenario we are interested in the asymptotic distribution of $R_{(1)}$ as $n\to\infty$ for a long position, and for a short position we consider $R_{(n)}$ as $n\to\infty$. If we assume that $R_i$ are i.i.d. then
+\begin{align*}
+	\P ( R_{(1)} \geq x ) &= \P ( R_1 < x, R_2 < x, ..., R_n < x) \\
+	&= P(R_1 < x)P(R_2 < x) \cdots P(R_n < x) \\
+	&= \left[ P(R_1 < x) \right]^n
+\end{align*}
+
+and if there exists some $\alpha_n > 0$ and $\beta_n > 0$ such that
+\begin{equation*}
+	\frac{ (R_{(1)} - \beta_n) }{ \alpha_n } \indist F
+\end{equation*}
+
+then
+\begin{equation*}
+	F(x) = 
+	\begin{cases}
+		1 - e^{-(1 + cx)^\frac{1}{c}} & c \neq 0 \quad \text{(Weibull distribution)} \\
+		1 - e^{-e^x} & c = 0 \quad \text{(Gumbell distribution)}
+	\end{cases}
+\end{equation*}
+
+with $c < 0$ for $x < -\frac{1}{c}$ and $c > 0$ for $x > -\frac{1}{c}$. We say that $F$ is the generalized extreme value distribution. To estimate $\alpha_n, \beta_n, c$ we use subsampling (bootstrapping) to estimate their distributions. \\
+
+\indent The point of these past few sections is to illustrate how lots of tools from probability and statistics can be employed (somewhat successfully) in risk management. \\
+
+\underline{Example with VaR}: Say the price of a zero coupon bond is given by
+\begin{equation*}
+	P(t, T, r_t) = Fe^{\alpha(t, T) - \beta(t,T)r_t}
+\end{equation*}
+
+where $\alpha$ and $\beta$ are deterministic functions such that
+\begin{equation*}
+	\alpha(T, T) = \beta(T, T) = 0 \quad \text{(terminal conditions)}
+\end{equation*}
+
+Suppose that $r_t$ is the instantaneous risk free rate. For sufficiently small $\Delta > 0$ suppose that
+\begin{equation*}
+	r(t + \Delta t) - r(t) \sim N \Big(\mu\Delta t, \sigma^2\Delta t \Big)
+\end{equation*} 
+
+Give an explicit expression for the 95\% VaR for a long position in the bond. \\
+
+\underline{Solution}: The $\Delta$-Normal approximation states that if risk factor
+\begin{equation*}
+	X_t \sim N(0, \sigma^2)
+\end{equation*}
+
+and $V(X_t)$ is the value of the portfolio at $t$ then
+\begin{equation*}
+	\Delta V \sim V'(X_t)\Delta X \indist N(0, \delta^2_t \sigma^2) 
+\end{equation*}
+
+where $\delta_t = V'(X_t)$. Write
+\begin{align*}
+	P(t, T, r_t) \approx P(t, T) &= Fe^{\alpha(t, T) - \beta(t, T)[r_t - \mu t] + \beta(t, T)\mu t} \\
+	&= Fe^{\alpha(t, T) - \beta(t,T)X_t + \beta(t, T)\mu t}
+\end{align*}
+
+where $X_t = r(t) - \mu t$. Then
+\begin{align*}
+	\Delta X &= X(t + \Delta t) - X(t) \\
+	&= r(t + \Delta t) - \mu(t + \Delta t) - r(t) + \mu t \\
+	&= r(t + \Delta t) - r(t) - \mu\Delta t \\
+	&\sim N(0, \sigma^2\Delta t)
+\end{align*}
+
+Note that
+\begin{align*}
+	\frac{\partial P}{\partial X} &= -\beta(t, T)P(t, T) = \delta_t \\
+	\implies \Delta P &\approx -\beta(t, T)P(t, T)\Delta X
+\end{align*}
+
+\indent For a long position we suffer a loss if $\Delta P < 0$ (since an increase in interest rate implies a drop in price), so, we must find $C$ such that
+\begin{align*}
+	0.05 &= \P( \Delta P < C ) \\
+	&= \P \left( \frac{ \Delta P }{ \delta_t \sigma \sqrt{\Delta t} } < \frac{ C }{ \delta_t \sigma \sqrt{\Delta t} } \right) \\
+	&\approx \P \left( Z < \frac{ C }{ \delta_t \sigma \sqrt{\Delta t} } \right) 
+\end{align*}
+
+Therefore, we require that
+\begin{align*}
+	\frac{ C }{ \delta_t \sigma \sqrt{\Delta t} } &= 1.645 \\
+	\implies C &= 1.645\delta_t \sigma\sqrt{\Delta t} \\
+	&= 1.645 \left[ -\beta(t, T)P(t, T) \right] \sigma \sqrt{\Delta t} \\
+	&= -1.645 \beta(t, T)P(t, T) \sigma \sqrt{\Delta t} \\
+\end{align*}
+
+\subsubsection{Final Considerations}
+
+\indent It can be interesting to test the above result with other interest rate models (e.g. CIR models, Vasicek models). Doing so gives us ``exponential affine'' solutions for the bond price. \\
+
+Vasicek model (on the real-world space)
+\begin{equation*}
+	dr_t = \alpha(\beta - r_t)\,dt + \sigma\,dB_t
+\end{equation*}
+
+satisfies the assumptions required for the bond price (i.e. bond prices appear in the correct form) as well as giving us that $\Delta r_t$ is normally distributed. \\
+
+CIR model
+\begin{equation*}
+	dr_t = \alpha(\beta - r_t)\,dt + \sigma\sqrt{r_t}\,dB_t
+\end{equation*}
+
+gives the bond price in the correct form as well but now we no longer have $\Delta r_t$ normally distributed (it ends up distributed as a non-central $\chi^2$).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

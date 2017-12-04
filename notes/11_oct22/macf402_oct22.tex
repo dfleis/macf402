@@ -1,0 +1,375 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Stochastic Interest Rate Models}
+\date{October 22 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Motivation for Computational Methods}
+
+\indent We wish to focus on computational aspects of financial mathematics. This is very often useful since we may not always have analytic formulae. Under the Black-Scholes model we can derive sufficiently closed-form expressions for only some exotic option prices/hedge ratios/hedged portfolios. In general, analytic expressions are useful since they are usually the most computationally efficient (and accurate). \\
+
+\indent However, even in the Black-Scholes model there are many types of derivatives without closed-form expressions for their prices/hedge ratios/hedged portfolios, and often we are then forced to use numerical methods. \\
+
+\indent For more complicated models including stochastic interest rates, stochastic volatilities, etc., it can be difficult or even impossible to find closed-form expressions for even simple vanilla option prices. For example, in the Black-Scholes model an American put option (as opposed to a European put) does not have a closed-form formula (as far as we know...). \\
+
+\indent We will look at some numerical aspects which are suitable for different models/derivatives. Chief among them are
+\begin{enumerate}
+	\item Monte-Carlo/Simulation methods
+	\item Binomial trees 
+	\item PDE methods
+	\item Some other statistical methods
+	\item etc...
+\end{enumerate}
+
+\indent We will do Monte-Carlo methods first, but before we do so we will look at some more complex models to later apply these methods.
+
+\section{Stochastic Interest Rate Models}
+
+\indent For interest rate models we're usually more interested in the interest rates implied by the observed bond prices, LIBOR, commercial/investment bank rates, and not the official Bank of Canada rate. Stochastic interest rates enable us to come up with more interesting/realistic models for term structure products: Bonds, swaps, anything depending on time value of money, really. \\
+
+\indent We previously assumed that interest rates we constant, which is obviously nonsense. We say that interest rates fluctuate in some random manner.\footnote{Randomness is just a modelling choice when we deal with processes with sufficiently many sufficiently complex variables and their interactions. Instead of giving up we choose to model the system with randomness.}\\
+
+\indent Suppose our risk free bank account $S^0$ is a process such that it is continuous, strictly positive, $\mathcal F_t$-adapted, and has finite variation. This implies that $S^0$ is a process that satisfies the differential equation
+\begin{equation*}
+	dS^0(t) = S^0(t)r(t)\,dt \iff S^0(t)e^{\int^t_0 r(u)\,du}, \quad S^0(0) = 1
+\end{equation*}
+
+\indent We could use a deterministic model for $r(t)$ but instead we will propose a random one. Recall that the risky asset has price given by
+\begin{equation*}
+	dS^1(t) = \mu(t)S^1(t)\,dt + \sigma(t)S^1(t)\,dB_t
+\end{equation*}
+
+\indent On the real world space $(\Omega,\mathcal F,\mathbb P)$ consider a portfolio process $H = (H^0,H^1)\in\mathcal F_t$ and the wealth process
+\begin{equation*}
+	X(t) = H^0_tS^0_t + H^1_tS^1_t
+\end{equation*}
+
+\indent We say that the portfolio process $H$ is self-financing if changes in wealth come strictly from changes in asset prices, that is
+\begin{equation*}
+	dX(t) = H^0_t\,dS^0_t + H^1_t\,dS^1_t
+\end{equation*}
+
+For a self-financing portfolio we can rewrite $dX(t)$ as
+\begin{equation*}
+	dX(t) = \big(H^0_tS^0_t\big)r(t)\,dt + H^1_t\,dS^1_t
+\end{equation*}
+
+Recall that we have define market price of risk as
+\begin{equation*}
+	\Theta(t) = \frac{\mu(t) - r(t)}{\sigma(t)}
+\end{equation*}
+
+and defined
+\begin{equation*}
+	Z^\Theta_t = \exp\Big(-\int^t_0\Theta(u)\,dB_u - \frac{1}{2}\int^t_0\Theta^2(u)\,du \Big)
+\end{equation*}
+
+and the risk neutral measure was constructed as
+\begin{equation*}
+	\mathbb P^{\Theta}(A) = \int_A Z^\Theta_T\,d\mathbb P,~\forall\,A\in\mathcal F_T
+\end{equation*}
+
+\indent We can prove all of the things that we had before when we considered constant $\Theta(t) = \Theta$ as in the Black-Scholes model (i.e. martingale representation, etc...). So, we can show that there exists a self-financing portfolio process $H^*$ (this comes from the Martingale Representation Theorem) that replicates a contingent claim with payoff $h_T \in \mathcal F_T$ at time $T$ with rational price at $t\in[0,T]$ given by the risk neutral pricing formula
+\begin{equation*}
+	V_t = \mathbb E_{\mathbb P^\Theta}\big[e^{-\int^T_t r(u)\,du} \big|\mathcal F_t\big]
+\end{equation*}
+
+\indent If $r(t) = r$ is constant then the price of a zero-coupon bond that pays \$1 at maturity $T$ is
+\begin{equation*}
+	B(t,T) = e^{-r(T - t)}
+\end{equation*}
+
+\indent But, if $r(t)$ is stochastic and we apply the results immediately above we get the more interesting
+\begin{equation*}
+	V_t = \mathbb E_{\mathbb P^\Theta}\big[e^{-\int^T_t r(u)\,du} \big|\mathcal F_t\big]
+\end{equation*}
+
+\indent It's useful to consider zero-coupon bonds since on many derivatives we have bonds as the underlying asset, and so it is useful to consider stochastic rates to give more realistic prices for bonds.
+
+\begin{definition} The \underline{T-forward price}, denoted $F(t,T)$ for the risky asset $S^1$ is a price agreed upon at time $t \leq T$ that will be paid at time $T$ for one unit of $S^1$. The value of the contract to both parties at contract inception is zero.
+\end{definition}
+
+\indent We can show using simple arbitrage arguments that if the interest rate is constant then we must have
+\begin{equation*}
+	F(t,T) = S^1_te^{r(T - t)}
+\end{equation*}
+
+\indent But, if we let interest rates be stochastic then we should consider the payoff (with respect to a long futures position)
+\begin{equation*}
+	h = S^1_T - F(t,T)
+\end{equation*}
+
+\indent This is the cash-settled futures contract -- what the long party will receive at time $T$ when the asset is bought with value $S^1_T$ for agreed-upon price $F(t,T)$. If the value of the contract is zero at contract inception $t$ then we have
+\begin{equation*}
+	V(t) = 0 = \mathbb E_{\mathbb P^\Theta}\big[ e^{-\int^T_t r(u)\,du}\big(S^1_T - F(t,T)\big) \big|\mathcal F_t\big]
+\end{equation*}
+
+We should note that
+\begin{align*}
+	S^0_t &= \mathrm{PV}(S^0_T) = S^0_Te^{-\int^T_t r(u)\,du} \\
+	\implies \frac{S^0_t}{S^0_T} &= e^{-\int^T_t r(u)\,du}
+\end{align*}
+
+So
+\begin{align*}
+	0 &= \mathbb E_{\mathbb P^\Theta}\big[ e^{-\int^T_t r(u)\,du}\big(S^1_T - F(t,T)\big) \big|\mathcal F_t\big] \\
+	&= \mathbb E_{\mathbb P^\Theta}\bigg[\frac{S^0_t}{S^0_T}\big(S^1_T - F(t,T)\big) \Big| \mathcal F_t\bigg] \\
+	&= \mathbb E_{\mathbb P^\Theta}\bigg[\frac{S^0_t}{S^0_T} S^1_T - \frac{S^0_t}{S^0_T} F(t,T) \Big| \mathcal F_t\bigg] \\
+	&= S^0_t\mathbb E_{\mathbb P^\Theta}\bigg[\frac{S^1_T}{S^0_T} - \frac{F(t,T)}{S^0_T} \Big| \mathcal F_t\bigg] \quad \text{(since } S^0_t \in \mathcal F_t)  \\
+	&= S^0_t\mathbb E_{\mathbb P^\Theta}\bigg[\overline{S}^1_T - \frac{F(t,T)}{S^0_T}\Big| \mathcal F_t\bigg] \\
+	&= S^0_t\mathbb E_{\mathbb P^\Theta}[\overline{S}^1_T | \mathcal F_t] - S^0_t\mathbb E_{\mathbb P^\Theta}\bigg[\frac{F(t,T)}{S^0_T} \Big| \mathcal F_t\bigg]
+\end{align*}
+
+Note that under measure $\mathbb P^\Theta$ the discounted asset price process $\overline{S}^1$ is a martingale, so
+\begin{equation*}
+	\mathbb E_{\mathbb P^\Theta}[\overline{S}^1_T | \mathcal F_t] = \overline{S}^1_t
+\end{equation*}
+
+Thus
+\begin{align*}
+	&= S^0_t\overline{S}^1_t - S^0_t\mathbb E_{\mathbb P^\Theta}\bigg[\frac{F(t,T)}{S^0_T} \Big| \mathcal F_t\bigg] \\
+	&= S^0_t\frac{S^1_t}{S^0_t} - S^0_t\mathbb E_{\mathbb P^\Theta}\bigg[\frac{F(t,T)}{S^0_T} \Big| \mathcal F_t\bigg] \\
+	&= S^1_t - S^0_t\mathbb E_{\mathbb P^\Theta}\bigg[\frac{F(t,T)}{S^0_T} \Big| \mathcal F_t\bigg] \\
+\end{align*}
+
+But note that $F(t,T)$ is $\mathcal F_t$-adapted since $T$ is constant and $F(t,T) = S^1_te^{r(T-t)}$, hence
+\begin{align*}
+	0 &= S^1_t - S^0_t\mathbb E_{\mathbb P^\Theta}\bigg[\frac{F(t,T)}{S^0_T} \Big| \mathcal F_t\bigg] \\
+	&= S^1_t - S^0_tF(t,T)\mathbb E_{\mathbb P^\Theta}\bigg[\frac{1}{S^0_T} \Big| \mathcal F_t\bigg] \\
+\end{align*}
+
+But 
+\begin{align*}
+	\frac{1}{S^0_T} &= e^{-\int^T_0 r(u)\,du} \\
+	&= e^{-\int^t_0 r(u)\,du - \int^T_t r(u)\,du} \\
+	&= e^{-\int^t_0 r(u)\,du}e^{-\int^T_t r(u)\,du}
+\end{align*}
+
+So
+\begin{align*}
+	0 &= S^1_t - S^0_tF(t,T)\mathbb E_{\mathbb P^\Theta}\bigg[\frac{1}{S^0_T} \Big| \mathcal F_t\bigg] \\
+	&= S^1_t - S^0_tF(t,T)\mathbb E_{\mathbb P^\Theta}\bigg[e^{-\int^t_0 r(u)\,du}e^{-\int^T_t r(u)\,du} \Big| \mathcal F_t\bigg] \\
+	&= S^1_t - S^0_tF(t,T)\mathbb E_{\mathbb P^\Theta}\bigg[\frac{1}{S^0_t}e^{-\int^T_t r(u)\,du} \Big| \mathcal F_t\bigg] \\
+	&= S^1_t - S^0_tF(t,T)\frac{1}{S^0_t}\mathbb E_{\mathbb P^\Theta}\bigg[e^{-\int^T_t r(u)\,du} \Big| \mathcal F_t\bigg] \quad \text{(since } \frac{1}{S^0_t}\in\mathcal F_t)\\
+	&= S^1_t - F(t,T)\mathbb E_{\mathbb P^\Theta}\bigg[e^{-\int^T_t r(u)\,du} \Big| \mathcal F_t\bigg] \\
+\end{align*}
+
+But $\mathbb E_{\mathbb P^\Theta}\bigg[e^{-\int^T_t r(u)\,du} \Big| \mathcal F_t\bigg]$ is precisely the zero-coupon bond price $B(t,T)$. Thus, we have
+\begin{align*}
+	0 &= S^1_t - F(t,T)B(t,T) \\
+	\implies F(t,T) &= \frac{S^1_t}{B(t,T)}
+\end{align*}
+
+\indent There are easier ways to do this derivation (i.e. arbitrage argumentation) but it was nice to see our hard work have some nice applications. Hopefully we may see now how the bond price is relevant and so why interest rate models are relevant. \\
+
+\indent In order to find $B(t,T)$ we must find a suitable model for $r(t)$. We call $r(t)$ the \underline{short rate} or instantaneous risk free interest rate. If we start with the real world measure we then must come up wit some assumptions for the market price of risk $\Theta(t)$. We usually specify our interest rate model on the risk neutral (martingale) probability space $(\Omega,\mathcal F,\mathbb Q)$, where $\mathbb Q = \mathbb P^\Theta$ for brevity.
+
+\subsection{Examples of Interest Rate Models}
+
+\subsubsection{Merton Model (1973)}
+\begin{equation*}
+	r(t) = r_0 + \alpha t + \sigma W_t
+\end{equation*}
+
+\indent This model is trash since we see deterministic drift and can produce negative interest rates quite easily.
+
+\subsubsection{Vasicek (1997)}
+\begin{equation*}
+	dr_t = \alpha(\beta - r_t)\,dt + \sigma\,dW_t
+\end{equation*}
+
+where the initial condition $r(0) = r_0$ and $\alpha > 0, \beta > 0, \sigma > 0$. We see that this model is Gaussian and in integral form we have
+\begin{equation*}
+	r_t = r_0 + \int^t_0 \alpha(\beta - r_u)\,du + \sigma W_t
+\end{equation*}
+
+\indent In this model we see \underline{mean reversion} with $\beta$ the \underline{mean reversion parameter} about which the process is pressured to move towards through time. We may see that $\alpha$ specifies the speed of mean reversion, $\beta$ specifies the mean, and $\sigma$ specifies the noise the process experiences through time. Mean reversion is a reasonable property to use since it is a common phenomenon in nature (i.e. predator-prey models). \\
+
+\indent By It\^{o}'s formula we can solve the SDE. To do so we consider the product (in similar style to an integrating factor in ODEs) $r_te^{\alpha t}$ and let $f(t,x) = xe^{\alpha t}$. Computing our derivatives we get
+\begin{equation*}
+	f_t(t,x) = \alpha xe^{\alpha t} \quad f_x(t,x) = e^{\alpha t} \quad f_{xx}(t,x) = 0
+\end{equation*}
+
+So, applying It\^{o}'s formula to $f$ we get
+\begin{align*}
+	f(t,x) &= f(0,0) + \int^t_0 f_u(u,x)\,du + \int^t_0 f_x(t,x)\,dx + \frac{1}{2}\int^t_0 f_{xx}(t,x)\,d\langle x\rangle \\
+	&= f(0,0) + \int^t_0 \alpha xe^{\alpha u}\,du + \int^t_0 e^{\alpha u}\,dx + 0 \\
+	&= f(0,0) + \int^t_0 \alpha xe^{\alpha u}\,du + \int^t_0 e^{\alpha u}\,dx
+\end{align*}
+
+Plugging in $r_te^{\alpha t}$ for $f(t,x)$ and $r_t$ for $x$ we get
+\begin{align*}
+	r_te^{\alpha t} &= r_0 \int^t_0 \alpha r_te^{\alpha u}\,du + \int^t_0 e^{\alpha u}\,dr_t \\
+	&= r_0 + \int^t_0 \alpha r_ue^{\alpha u}\,du + \int^t_0 e^{\alpha u}\big[\alpha(\beta - r_u)\,du + \sigma\,dW_u
+\big] \\
+	&= r_0 + \int^t_0 \alpha r_ue^{\alpha u}\,du + \int^t_0 e^{\alpha u}\alpha(\beta - r_u)\,du + \int^t_0 e^{\alpha u}\sigma\,dW_u \\
+	&= r_0 + \int^t_0 \alpha r_ue^{\alpha u}\,du + \int^t_0 e^{\alpha u}\alpha\beta\,du - \int^t_0 e^{\alpha u}\alpha r_u\,du + \int^t_0 e^{\alpha u}\sigma\,dW_u \\
+	&= r_0 + \int^t_0 e^{\alpha u}\alpha\beta\,du + \int^t_0 e^{\alpha u}\sigma\,dW_u \\
+	&= r_0 + \Big[e^{\alpha u}\beta\Big]^{u = t}_{u = 0} + \int^t_0 e^{\alpha u}\sigma\,dW_u \\
+	&= r_0 + e^{\alpha u}\beta - \beta + \int^t_0 e^{\alpha u}\sigma\,dW_u \\
+	\implies r_t &= e^{-\alpha t}\Big[r_0 + \beta(e^{\alpha u} - 1) + \int^t_0 e^{\alpha u}\sigma\,dW_u \Big] \\
+	&=  e^{-\alpha t}r_0 + \beta(1 - e^{-\alpha u}) + \sigma e^{-\alpha t}\int^t_0 e^{\alpha u}\,dW_u 
+\end{align*}
+
+We may find that $r_t$ is Gaussian with mean
+\begin{align*}
+	\mathbb E_{\mathbb Q}[r_t] &= \mathbb E_{\mathbb Q}\Big[ e^{-\alpha t}r_0 + \beta(1 - e^{-\alpha u}) + \sigma e^{-\alpha t}\int^t_0 e^{\alpha u}\,dW_u \Big] \\
+	&= e^{-\alpha t}r_0 + \beta(1 - e^{-\alpha t}) + \sigma e^{-\alpha t}\mathbb E_{\mathbb Q}\Big[ \int^t_0 e^{\alpha u}\,dW_u \Big] \\
+	&= e^{-\alpha t}r_0 + \beta(1 - e^{-\alpha t})
+\end{align*}
+
+and variance\footnote{Work omitted, but the basic idea is to find $\mathbb E_{\mathbb Q}[r_t^2]$ and use the formula $\mathrm{Var}(X) = \mathbb E[X^2] - \mathbb E^2[X]$.}
+\begin{equation*}
+	\mathrm{Var}_{\mathbb Q}[r_t] = \frac{e^{-2\alpha t}}{2\alpha}\sigma^2(e^{2\alpha t} - 1)
+\end{equation*}
+
+Thus
+\begin{equation*}
+	r_t \sim N\Big(e^{-\alpha t}r_0 + \beta(1 - e^{-\alpha t}), \frac{e^{-2\alpha t}}{2\alpha}\sigma^2(e^{2\alpha t} - 1)\Big)
+\end{equation*}
+
+\indent This may pretty big and horrible but it is actually not so bad to work with in practice since it's just a normally distributed random variable. However, we should note that this implies that the Vasicek model does allow for negative interest rates $r_t$ with some non-zero probability. Problems notwithstanding, we can use this expression to calculate the bond price
+\begin{equation*}
+	B(t,T) = \mathbb E_{\mathbb Q}\Big[e^{-\int^T_t r_u\,du} \Big]
+\end{equation*}
+
+\indent Obviously this will be hard to manipulate with the integral in the exponential but there are some ways to actually go through with this expectation. Furthermore, we can show that in the Vasicek model that
+\begin{equation*}
+	B(t,T) = e^{A(t,T) - C(t,T)r_t}
+\end{equation*}
+
+where $A$ and $C$ are deterministic functions and solve some ordinary differential equation, and so may themselves be determined. Cutting straight to the conclusion we have
+\begin{align*}
+	A(t,T) &= -\Big(\beta - \frac{\sigma^2}{2\alpha^2}\Big)(T - t) + \Big(\frac{\beta}{\alpha} - \frac{\sigma^2}{\alpha^3}\Big)(1 - e^{-\alpha(T - t)}) + \frac{\sigma^2}{4\alpha^3}(1 - e^{-2\alpha(T - t}) \\
+	&\hphantom{{}={-\Big(\beta - \frac{\sigma^2}{2\alpha^2}\Big)}} \text{(This may be wrong, we may revise this at a later date)} \\
+	C(t,T) &= \cdots \quad \text{(We save $C$ since we may use it as a problem for a future assignment)}
+\end{align*}
+
+\subsubsection{Dothan (1978)}
+\begin{equation*}
+	r_t = r_0 + \int^t_0 \sigma r_u\,dW_u
+\end{equation*}
+
+\indent This model avoids negative interest rates by considering geometric Brownian motion but has the catastrophic pitfall of being able to grow without bounds as well as providing no explicit bond price.
+
+
+\subsubsection{Brennan \& Schwartz (1980)} 
+\begin{equation*}
+	r_t = r_0 + \int^t_0 \alpha(\beta - r_u)\,du + \int^t_0 \sigma r_u\,dW_u
+\end{equation*}
+
+\indent We see that this model includes both a mean reversion component and a geometric Brownian motion component. However, this model doesn't provide an explicit bond price as well as allowing the riskless bank account to grow without bounds in finite time. As a result, nobody uses this model.
+
+\subsubsection{Cox-Ingersoll-Ross (1985)}
+\begin{equation*}
+	dr_t = \beta(\alpha - r_t)\,dt + \sigma\sqrt{r_t}\,dW_t
+\end{equation*}
+
+\indent We require $\alpha, \beta, \sigma > 0$ and to avoid having negative rates under the radical we also require $2\alpha\beta > \sigma^2$. Similar to the Vasicek model, this model does provide an explicit expression for bond prices 
+\begin{equation*}
+	B(t,T) = e^{A^*(t,T) - C^*(t,T)r_t}
+\end{equation*}
+
+where $A^*$ and $C^*$ are not the same deterministic functions as in the Vasicek model. We say that these are exponential affine functions for bond prices.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

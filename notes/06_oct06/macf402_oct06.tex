@@ -1,0 +1,766 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Introduction to Stochastic Calculus}
+\date{October 6 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Examples with It\^{o}'s Rule}
+
+``If you're clever with It\^{o}'s formula there's a lot that you can accomplish." \\
+\\
+\indent Before we get started it's useful to remember that we may simplify the quadratic variation for standard Brownian motion as $\langle B_{(\cdot)} \rangle_t = t$, thus the differential $d\langle B_{(\cdot)} \rangle_t = dt$. \\
+\\
+For the following examples let $B_t$ be a standard Brownian motion with filtration $(\{\mathcal F\}_{t\geq0},\mathbb P)$. 
+
+\subsection{Example 1}
+
+Use It\^{o}'s formula to find the SDE satisfied by the following function of Brownian motion:
+
+\begin{equation*}
+	f(t,x) = \cos(tx)
+\end{equation*}
+
+Solution \\
+\\
+Recall from It\^{o}'s formula we get
+\begin{equation*}
+	f(t,B_t) = f(0,B_0) + \int^t_0 f_t(u,B_u)\,du + \int^t_0 f_x(u,B_u)\,dB_u + \frac{1}{2}\int^t_0 f_{xx}(u,B_u)\,d\langle B_{(\cdot)}\rangle_u
+\end{equation*}
+
+Computing our first and second order derivatives we have
+\begin{align*}
+	f_t(t,x) &= -x\sin(tx) \\
+	f_x(t,x) &= -t\sin(tx) \\
+	f_{xx}(t,x) &= -t^2\cos(tx)
+\end{align*}
+
+So
+\begin{align*}
+	f(t,B_t) &= cos(0) + \int^t_0 -B_u\sin(uB_u)\,du + \int^t_0 -u\sin(u,B_u)\,dB_u + \frac{1}{2}\int^t_0 -u^2\cos(uB_u)\,du \\
+	&\hphantom{{} = cos(0) + \int^t_0 -B_u\sin(uB_u)\,du + \int^t_0 -u\sin(u,B_u)\,dB_u}\text{(from } \langle B_{(\cdot)} \rangle_t = t, \text{ so } d\langle B_{(\cdot)} \rangle_t = dt) \\
+	&= 1 - \int^t_0 \big(B_u\sin(uB_u) + u^2\cos(uB_u)\big)\,du - \int^t_0 u\sin(uB_u)\,dB_u
+\end{align*}
+
+\subsection{Example 2}
+
+Use It\^{o}'s formula to find the SDE satisfied by the following function of Brownian motion:
+
+\begin{equation*}
+	f(t,x) = e^{x^2} = f(x)
+\end{equation*}
+
+Solution \\
+\\
+Note we have only a function of $x$ so 
+\begin{align*}
+	f_t(x) &= 0 \\
+	f_x(x) &= e^{x^2}2x \\
+	f_{xx}(x) &= e^{x^2}(2x)^2 + e^{x^2}2
+\end{align*}
+
+So
+\begin{align*}
+	f(B_t) &= 1 + \int^t_0 0\,du + \int^t_0 e^{B_u^2}2B_u\,dB_u + \frac{1}{2}\int^t_0\big(e^{B_u^2}(2B_u)^2 + e^{B_u^2}2\big)\,du \\
+	&= 1 + 2\int^t_0 B_ue^{B_u^2}\,dB_u + \frac{1}{2}2\int^t_0 (1 + 2B_u^2)e^{B_u^2}\,du \\
+	&= 1 + \int^t_0 (1 + 2B_u^2)e^{B_u^2}\,du  + 2\int^t_0 B_ue^{B_u^2}\,dB_u
+\end{align*}
+
+\subsection{Example 3}
+
+Use It\^{o}'s formula to find the SDE satisfied by the following function of Brownian motion:
+
+\begin{equation*}
+	f(t,x) = \arctan(t + x)
+\end{equation*}
+
+Solution \\
+\\
+Taking our derivatives we get
+\begin{align*}
+	f_t(t,x) &= \frac{1}{1 + (t + x)^2} \\
+	f_x(t,x) &= \frac{1}{1 + (t + x)^2} \\
+	f_{xx}(t,x) &= \frac{-1}{\big(1 + (t + x)^2\big)^2}2(t + x) \\
+\end{align*}
+
+So
+\begin{align*}
+	f(t,B_t) &= \arctan(0 + 0) + \int^t_0 \frac{1}{1 + (u + B_u)^2}\,du + \int^t_0 \frac{1}{1 + (u + B_u)^2}\,dB_u \\
+	&\hphantom{{}={\arctan(0 + 0) + \int^t_0 \frac{1}{1 + (u + B_u)^2}\,du + \int^t_0}\frac{1}{1}} + \frac{1}{2}\int^t_0 \frac{-2(u + B_u)}{\big(1 + (u + B_u)^2\big)^2}\,du \\
+	&= \int^t_0 \frac{1}{1 + (u + B_u)^2}\,du + \int^t_0 \frac{1}{1 + (u + B_u)^2}\,dB_u - \int^t_0 \frac{u + B_u}{\big(1 + (u + B_u)^2\big)^2}\,du \\
+		&= \int^t_0 \frac{1}{1 + (u + B_u)^2} - \frac{u + B_u}{\big(1 + (u + B_u)^2\big)^2}\,du + \int^t_0 \frac{1}{1 + (u + B_u)^2}\,dB_u \\
+		&= \int^t_0 \frac{1 + (u + B_u)^2 - (u + B_u)}{\big(1 + (u + B_u)^2\big)^2}\,du + \int^t_0 \frac{1}{1 + (u + B_u)^2}\,dB_u \\
+\end{align*}
+
+
+\subsection{Example 4}
+
+Suppose $S_t$ satisfies to SDE
+\begin{equation*}
+	dS_t = \mu S_t\,dt + \sigma S_t\,dB_t, \quad S_0 = s_0, \quad 0\leq t\leq T
+\end{equation*}
+
+In integral form\footnote{``The integral form of a differential equation actually means something''} we have
+\begin{equation*}
+	f(t,S_t) = f(0,S_0) + \int^t_0 \mu f(u,B_u)\,du + \int^t_0 \sigma f(u,B_u)\,dB_u
+\end{equation*}
+
+Find the SDE satisfied by $G(t) = f(t,S_t) = e^{\alpha(T-t)}S_t$ for $\alpha\in\mathbb R$. Apply It\^{o}'s formula to $G(t) = f(t,S_t)$
+\begin{align*}
+	G(t) &= f(0,S_0) + \int^t_0 f_t(u,S_u)\,du + \int^t_0 f_x(u,S_u)\,dS_u + \frac{1}{2}\int^t_0 f_{xx}(u,S_u)\,d\langle S_{(\cdot)}\rangle_u \\
+\end{align*}
+
+Computing our derivatives for $G(t) = e^{\alpha(T-t)}S_t$ we get
+\begin{align*}
+	f_t(t,S_t) &= e^{\alpha(T-t)}(-\alpha)S_t \\
+	f_{S_t}(t,S_t) &= e^{\alpha(T-t)} \\
+	f_{S_tS_t}(t,S_t) &= 0
+\end{align*}
+
+Plugging in we get
+\begin{equation*}
+	G(t) = e^{\alpha T}s_0 + \int^t_0 (-\alpha)e^{\alpha(T-u)}S_u\,du + \int^t_0 e^{\alpha(T - u)}\,dS_u + \frac{1}{2}\int^t_0 0\,d\langle S_{(\cdot)}\rangle_u
+\end{equation*}
+
+\indent Note that we are considering the quadratic variation of $S_t$ in the final differential term $d\langle S_{(\cdot)}\rangle_u$. The quadratic variation of $S_t$ is a little more involved than the quadratic variation of $B_t$. We know that $\langle B_{(\cdot)}\rangle_t = t$ but we cannot say the same for $\langle S_{(\cdot)}\rangle_t$ since we have $dS_t = \mu S_t\,dt + \sigma S_t\,dB_t$. As a result we can't wave our hands as before and say $d\langle S_{(\cdot)}\rangle_t = dt$. Fortunately we have the integrand in this case to be 0 so we don't have to think about the consequences, but ``you could figure out what this thing is from the definitions \& formulas''. Moving on,
+
+\begin{equation*}
+		G(t) = e^{\alpha T}s_0 + \int^t_0 (-\alpha)e^{\alpha(T-u)}S_u\,du + \int^t_0 e^{\alpha(T - u)}\,dS_u + 0
+\end{equation*}
+
+\indent From our initial assumption of $S_t$ satisfying the SDE $dS_t = \mu S_t\,dt + \sigma S_t\,dB_t$ we can break down our SDE to
+
+\begin{align*}
+	G(t) &= e^{\alpha T}s_0 + \int^t_0 (-\alpha)e^{\alpha(T-u)}S_u\,du + \int^t_0 e^{\alpha(T_u)}\,(\mu S_u\,du + \sigma S_u\,dB_u) \\
+	&= e^{\alpha T}s_0 + \int^t_0 (-\alpha)e^{\alpha(T-u)}S_u\,du + \int^t_0 e^{\alpha(T - u)}\mu S_u\,du + e^{\alpha(T - u)}\sigma S_u\,dB_u \\
+	&= e^{\alpha T}s_0 + \int^t_0 (\mu -\alpha)e^{\alpha(T-u)}S_u\,du + \int^t_0 e^{\alpha(T - u)}\sigma S_u\,dB_u
+\end{align*}
+
+But $e^{\alpha(T-u)}S_u \equiv G(u)$, so
+\begin{equation*}
+	G(t) = e^{\alpha T}s_0 + \int^t_0 (\mu -\alpha)G(u)\,du + \int^t_0 \sigma G(u)\,dB_u
+\end{equation*}
+\\
+
+\section{Ticks with It\^{o}'s Isometry (Pythagoras Principle)}
+
+\indent Use the It\^{o} isometry to calculate the variances of the following It\^{o} integrals and explain why the stochastic integrals are well defined.
+
+\subsection{Example 1}
+
+Find the variance of
+
+\begin{equation*}
+	\int^t_0 |B_s|^{^1/_2}\,dB_s
+\end{equation*}
+
+\underline{Solution}: \\
+\\
+Let $Y_t = \int^t_0 |B_s|^{^1/_2}\,dB_s$. Then $Y_t$ is a martingale\footnote{This is because, for a simple process $H$, stochastic integrals with respect to Brownian motion of the form $\int^t_0 H_u\,dB_u$ are martingales. See Sept. 29 notes.} so $\mathbb E[Y_t] = 0$ and $\mathbb E^2[Y_t] = 0$. \\
+
+Now, computing $\mathbb E[Y_t^2]$
+\begin{align*}
+	\mathbb E[Y_t^2] &= \mathbb E\left[ \int^t_0 \Big(|B_s|^{^1/_2} \Big)^2\,ds \right] \quad \text{(by It\^{o}'s Isometry)} \\
+	&= \mathbb E\left[ \int^t_0 |B_s|\,ds \right] \\
+	&= \int^t_0 \mathbb E[|B_s|]\,ds \quad \text{(by Fubini's Theorem\footnotemark)}
+\end{align*}
+\footnotetext{The liberal use of Fubini's Theorem in these contexts is not trivial and is something that ought to be verified.}
+
+We know $B_s$ is normal with mean zero and variance $s$, so $|B_s|$ has distribution\footnote{There's some methods you can do to derive this (that I don't currently know) but the intuitive way of of seeing this is the following: Since we've restricted the domain of our distribution to only half of $\mathbb R$ then every $f(x)$ should take on twice the value. This intuition obviously relies on the fact that our distribution has mean zero and is symmetric about the mean, i.e. symmetric about the point we're folding over.}
+\begin{equation*}
+	f(x) = \frac{2}{\sqrt{2\pi s}} e^{-\frac{x^2}{2s}}, \quad x>0
+\end{equation*}
+
+Computing $\mathbb E[|B_s|]$, for brevity denoting $X := |B_s|$,
+\begin{align*}
+	\mathbb E[X] &= \int^\infty_0 x\frac{2}{\sqrt{2\pi s}} e^{-\frac{x^2}{2s}}\,dx \\
+	&= \frac{2}{\sqrt{2\pi s}}\int^\infty_0 xe^{-\frac{x^2}{2s}}\,dx \\
+	&= \frac{2}{\sqrt{2\pi s}}\int^\infty_0 xe^{-\frac{x^2}{2s}}\,dx 
+\end{align*}
+
+Let $u = \frac{-x^2}{2s}$, so $du = \frac{-2x}{2s}\,dx \iff -s\,du = x\,dx$, so
+\begin{align*}
+	\mathbb E[X] &= \frac{2}{\sqrt{2\pi s}}\int^{-\infty}_0 -se^{u}\,du \\
+	&= \frac{2}{\sqrt{2\pi s}}\int^0_{-\infty} se^{u}\,du  \\
+	&= \frac{2s}{\sqrt{2\pi s}}\int^0_{-\infty} e^{u}\,du  \\
+	&= \frac{2s}{\sqrt{2\pi s}}\big[e^x\big]^{x = 0}_{x = -\infty} \\
+	&= \frac{2s}{\sqrt{2\pi s}}\big[1 - 0\big] \\
+	&= \frac{2s}{\sqrt{2\pi s}} \\
+	&= 2s\frac{\sqrt{2s}}{2\sqrt{\pi} s} \\
+	\mathbb E[X] = \mathbb E[|B_s|] &= \frac{\sqrt{2s}}{\sqrt{\pi}}
+\end{align*}
+
+So we have $\mathbb E[|B_s|] = \frac{\sqrt{2s}}{\sqrt{\pi}}$, which is well defined since $s \geq 0$, then
+\begin{align*}
+	\mathbb E[Y_t^2] &= \int^t_0 \mathbb E[|B_s|]\,ds = \int^t_0 \frac{\sqrt{2s}}{\sqrt{\pi}}\,ds \\
+	&= \frac{\sqrt{2}}{\sqrt{\pi}}\int^t_0\sqrt{s}\,ds \\
+	&= \frac{\sqrt{2}}{\sqrt{\pi}}\frac{2}{3}t^{^3/_2}
+\end{align*}
+
+\indent So $\mathrm{Var}\Big[\int^t_0|B_s|^{^1/_2}\Big] \equiv \mathrm{Var}[Y_t] = \mathbb E[Y_t^2] - \mathbb E^2[Y_t] =  \frac{\sqrt{2}}{\sqrt{\pi}}\frac{2}{3}t^{^3/_2} - 0$, then clearly, for some $t \in \mathbb R$, we have $\mathrm{Var}[Y_t^2] < \infty$. Since our variance is finite over some finite interval and ``the integrand $\mathbb E[|B_s|] = \frac{\sqrt{2s}}{\sqrt{\pi}}$ is adapted''\footnote{That is, the integrand is $\mathcal F$-measurable (i.e. it's a random variable in our probability space).} then we have that our variance is well defined, as desired.
+
+\subsection{Example 2}
+
+Find the variance of 
+\begin{equation*}
+	\int^t_0|B_s + s|^2\,dB_s
+\end{equation*}
+
+\underline{Solution}: \\
+
+Let $Y_t = 	\int^t_0|B_s + s|^2\,dB_s$. Then $Y_t$ is a martingale\footnote{Can we write $H_s := |B_s + s|^2$? Is the integrand a simple process? If so then it's clear (to me) why this is a martingale.} so $\mathbb E[Y_t] = \mathbb E^2[Y_t] = 0$ and
+\begin{align*}
+	\mathbb E[Y^2_t] &= \mathbb E\Big[\Big(\int^t_0 |B_s + s|^2\,dB_s\Big)\Big] \\
+	&= \mathbb E\Big[\int^t_0 |B_s + s|^4\,ds\Big] \quad \text{(by It\^{o}'s Isometry)} \\
+	&= \int^t_0\mathbb E\big[|B_s + s|^4\big]\,ds \quad \text{(by Fubini's Theorem)} \\
+	&= \int^t_0 \mathbb E\big[(B_s^4 + 4sB_s^3 + 6s^2B_s^2 + 4s^3B_s + s^4)\big]\,ds \\
+	&\hphantom{{}={\int^t_0 \mathbb E\big[(B_s^4 + 4sB_s^3 + }} \text{(removing $|\cdot|$ due to exponentiation by an even power)} \\
+	&= \int^t_0 \big(\mathbb E[B_s^4] + 4s\mathbb E[B_s^3] + 6s^2\mathbb E[B_s^2] + 4s^3\mathbb E[B_s] + s^4\big)\,ds
+\end{align*}
+
+Recall our (useful!) lemma stating, for $s \leq t$,
+\begin{equation*}
+	\mathbb E\big[(B_t - B_s)^m\big] = 
+	\begin{cases}
+	0 & m \text{ odd}\\
+	1\cdot3\cdots(m-3)\cdot(m-1)(t-s)^{^m/_2} & m \text{ even}
+	\end{cases}
+\end{equation*}
+
+Hence
+\begin{align*}
+	\mathbb E[Y_t^2] &= \int^t_0 \big(\mathbb E[B_s^4] + 4s\mathbb E[B_s^3] + 6s^2\mathbb E[B_s^2] + 4s^3\mathbb E[B_s] + s^4\big)\,ds \\
+	&= \int^t_0 \big(3s^2 + 0 + 6s^2s + 0 + s^4\big)\,ds \\
+	&= \int^t_0 \big(3s^2 + 6s^3 + s^4\big)\,ds \\
+	&= \frac{1}{3}3t^3 + \frac{1}{4}6t^4 + \frac{1}{5}t^5 \\
+	\mathbb E[Y_t^2] &= t^3 + \frac{3}{2}t^4 + \frac{1}{5}t^5
+\end{align*}
+
+Thus
+\begin{align*}
+	\mathrm{Var}\left[\int^t_0|B_s+s|^2\,dB_s\right] = \mathrm{Var}[Y_t] &= \mathbb E[Y_t^2] - \mathbb E^2[Y_t] \\
+	&= t^3 + \frac{3}{2}t^4 + \frac{1}{5}t^5 + 0 \\
+	&= t^3 + \frac{3}{2}t^4 + \frac{1}{5}t^5 \\
+\end{align*}
+
+\indent By the same logic as above, we have an adapted integrand and finite variance therefore our variance is well defined $\text{Var}\left[\int^t_0|B_s+s|^2\,dB_s\right] = t^3 + \frac{3}{2}t^4 + \frac{1}{5}t^5$, as desired.
+
+
+\section{Expectations of SDEs as ODEs}
+
+\indent The oldest trick in the book of mathematics is to transform a hard problem into an easier one. In our case we will sometimes try calculate to the expectation or variance of a stochastic differential equation by solving a related ODE.
+
+\subsection{Example 1}
+
+Let $B_t$ be standard Brownian motion and consider
+\begin{equation*}
+	Y_t = e^{\lambda B_t}
+\end{equation*}
+
+where $\lambda$ is some nonzero constant. \\
+
+{\bf Step 1: Write the appropriate SDE} \\
+
+\indent We will use It\^{o}'s formula on $f(x) = e^{\lambda x}$. Notice that we have no time parameter so $f_t(x) = 0$ and
+\begin{equation*}
+	f_x(x) = \lambda e^{\lambda x} \quad f_{xx}(x) = \lambda^2 e^{\lambda x}
+\end{equation*}
+
+From It\^{o}'s formula we find
+\begin{align*}
+	f(B_t) &= f(B_0) + \int^t_0f'(B_u)\,dB_u + \frac{1}{2}\int^t_0f''(B_u)\,d\langle B_{(\cdot)}\rangle_u \\
+	&= f(0) + \lambda\int^t_0 f(B_u)\,dB_u + \frac{1}{2}\lambda^2\int^t_0 f(B_u)\,du \quad \text{(once again seeing $d\langle B_{(\cdot)}\rangle = dt$)}
+\end{align*}
+
+Since $f(B_t) \equiv Y_t$ we have that $Y_t$ satisfies the SDE
+\begin{equation*}
+	Y_t = 1 + \frac{1}{2}\lambda^2\int^t_0 Y_u\,du + \lambda\int^t_0 Y_u\,dB_u
+\end{equation*}
+
+Or in differential form
+\begin{equation*}
+	dY_t = \frac{1}{2}\lambda^2Y_t\,dt + \lambda Y_t\,dB_t, \quad Y_0 = 1
+\end{equation*}
+
+{\bf Step 2: Take the expectation of the SDE to yield an ODE} \\
+
+\indent Define $\phi(t) := \mathbb E[Y_t]$ and notice that this is now a deterministic function of $t$ (time, in our case). We take the expected value of the integral form of our SDE
+\begin{equation*}
+	\mathbb E[Y_t] = 1 + \frac{1}{2}\lambda^2\mathbb E\left[\int^t_0 Y_u\,du\right] + \lambda\mathbb E\left[\int^t_0 Y_u\,dB_u\right] \\
+\end{equation*}
+
+But expectations of stochastic integrals are zero,\footnote{Since stochastic integrals of simple processes are martingales.}~so $\mathbb E\Big[\int^t_0 Y_u\,dB_u\Big] = 0$, hence
+\begin{equation*}	
+	\mathbb E[Y_t] = 1 + \frac{1}{2}\lambda^2\mathbb E\left[\int^t_0 Y_u\,du\right]\\
+\end{equation*}
+
+\indent Now, explicitly working through Fubini's Theorem to swap the integral operation with the expectation we have
+\begin{align*}
+	\mathbb E\Big[\int^t_0 Y_u\,du\Big] &= \int_\Omega\int^t_0 Y_u(\omega)\,du\,d\mathbb P(\omega) \\
+	&= \int^t_0\int_\Omega Y_u(\omega)\,d\mathbb P(\omega)\,du \\
+	&= \int^t_0 \mathbb E[Y_u]\,du
+\end{align*}
+
+So our expectation of $Y_t$ is equivalent to
+\begin{equation*}
+	\mathbb E[Y_t] = 1 + \frac{1}{2}\lambda^2 \int^t_0 \mathbb E[Y_u]\,du
+\end{equation*}
+
+That is, we have just constructed the following ODE for $\phi(t) := \mathbb E[Y_t]$
+\begin{equation*}
+	\phi(t) = 1 + \frac{1}{2}\lambda^2\int^t_0\phi(u)\,du
+\end{equation*}
+
+In differential form
+\begin{equation*}
+	d\phi(t) = \frac{1}{2}\lambda^2\phi(t)
+\end{equation*}
+
+{\bf Step 3: Solving the ODE} \\
+
+We now go through the steps to solve for $\phi(t)$
+\begin{align*}
+	\frac{d\phi(t)}{\phi(t)} &= \frac{1}{2}\lambda^2 \\
+	\implies \log(\phi(t)) &= \frac{1}{2}t\lambda^2 + c \\
+	\implies \phi(t) &= e^{c}e^{\frac{1}{2}t\lambda^2} \\
+	&= Ce^{\frac{1}{2}t\lambda^2}
+\end{align*}
+
+and using the initial condition $\phi(0) = \mathbb E[Y_0] = e^{\lambda B_0} = e^{\lambda(0)} = 1$ we see that
+\begin{equation*}
+	1 = Ce^{\frac{1}{2}\lambda^2(0)} \implies C = 1
+\end{equation*}
+
+Thus
+\begin{equation*}
+	\phi(t) = e^{\frac{1}{2}t\lambda^2}
+\end{equation*}
+
+\indent We should realize that this result was perhaps anticipated by us since taking the expectation $\mathbb E[Y_t] = \mathbb E[e^{\lambda B_t}]$ is equivalent to computing the moment generating function of a normal random variable with mean zero and variance $t$ which has the form $e^{\frac{\sigma^2}{2}t}$.
+
+\section{It\^{o}'s Formula in Multiple Dimensions}
+
+\begin{definition} Let $B^{(j)}_t$ be a standard Brownian motion for $j = 1, \cdots, m$ and suppose that $B^{(i)}_t$ is independent of $B^{(j)}_t$ for $i \neq j$. Then, a \underline{$n$-dimensional\footnotemark~~It\^{o} process}\footnotetext{I'm still trying to figure out why it's $n$-dimensional and not $m$-dimensional.} is a vector valued process $X_t = (X^{(1)}_t,\cdots,X^{(n)}_t)$ where components $X^{(i)}_t$ are given by
+\begin{equation*}
+	X^{(i)}_t = X^{(i)}_0 + \int^t_0 K^{(i)}_s\,ds + \sum^m_{j = 1}\int^t_0 H^{(i,j)}_s\,dB^{(j)}\,ds
+\end{equation*}
+
+We require that, for all $i = 1, \cdots, n$ and $j = 1, \cdots, m$
+\begin{enumerate}
+	\item $K^{(i)}$ and $H^{(i,j)}$ be adapted to $\{\mathcal F_t\}$
+	\item $\int^T_0 |K^{(i)}_s|\,ds < \infty \quad \mathbb P-$a.s.
+	\item $\int^T_0 |H^{(i,j)}_s|^2\,ds < \infty \quad \mathbb P-$a.s.
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}{It\^{o}'s Formula in $n$-dimensions} Suppose $X_t = (X^{(1)}_t,\cdots,X^{(n)}_t)$ is an $n$-dimensional It\^{o} process as defined above and suppose $f:[0,T]\times\mathbb R^n \rightarrow \mathbb R$ is in $\mathcal C^{1,2}$. Then
+
+\begin{align*}
+	f(t,X^{(1)}_t,\cdots,X^{(n)}_t) &= f(0,X^{(1)}_0,\cdots,X^{(n)}_0) + \int^t_0 \frac{\partial}{\partial s} f(s,X^{(1)}_s,\cdots,X^{(n)}_s)\,ds\\
+	&\hphantom{{}={f(0,X^{(1)}_0,\cdots}}
+	+ \sum^n_{i = 1}\int^t_0 \frac{\partial}{\partial x_i}f(s,X^{(1)}_s,\cdots,X^{(n)}_s)\,dX^{(i)}_s \\
+	&\hphantom{{}={f(0,X^{(1)}_0,\cdots}} + \frac{1}{2}\sum^n_{i=1}\sum^n_{j=1}\int^t_0\frac{\partial^2}{\partial x_i\partial x_j}f(s,X^{(1)}_s,\cdots,X^{(n)}_s)\,d\langle X^{(i)}_{(\cdot)},X^{(j)}_{(\cdot)}\rangle_s
+\end{align*}
+
+where
+\begin{align*}
+	dX^{(i)}_s &= K^{(i)}_s\,ds + \sum^m_{j=1}H^{(i,j)}_s\,dB^{(i)}_s \\
+	d\langle X^{(i)}_{(\cdot)},X^{(j)}_{(\cdot)}\rangle_s &= \sum^m_{r=1} H^{(i,r)}_sH^{(j,r)}_s\,ds
+\end{align*}
+\end{theorem}
+
+\subsection{Example 1}
+
+Consider the processes $X, Y$ with lognormal dynamics
+\begin{align*}
+	dX_t &= \mu^X_tX_t\,dt + \sigma^X_tX_t\,dB_t \\
+	dY_t &= \mu^Y_tY_t\,dt + \sigma^Y_tY_t\,dB_t
+\end{align*}
+
+Show that the process $Z_t = \frac{X_t}{Y_t}$ is also lognormally distributed with dynamics\footnote{We may think of this quotient as the relative performance of two assets.}
+\begin{equation*}
+	dZ_t = \mu^Z_tZ_t\,dt + \sigma^Z_tZ_t\,dB_t
+\end{equation*}
+
+\underline{Solution}: \\
+
+Let $f(x,y) = \frac{x}{y}$. We first compute our derivative terms
+\begin{align*}
+	f_x(x,y) &= \frac{1}{y} \\
+	f_y(x,y) &= -\frac{x}{y^2} \\
+	f_{xx}(x,y) &= 0 \\
+	f_{yy}(x,y) &= \frac{2x}{y^3} \\
+	f_{xy}(x,y) = f_{yx}(x,y) &= -\frac{1}{y^2}
+\end{align*}
+
+\indent Before getting started with It\^{o}'s Formula notice that we require $Y_t \neq 0 ~\mathbb P$-a.s. However we can show that a solution\footnote{Did we already do this? Are we just pulling this out of a hat? Proof left as an exercise for the reader...}~ to the SDE for $Y_t$ is
+\begin{equation*}
+	Y_t = Y_0e^{\int^t_0(\mu^Y_u - \frac{1}{2}[\sigma^Y_u]^2)\,du + \int^t_0\sigma_u\,dB_u}
+\end{equation*}
+
+and provided that $Y_0 \neq 0$ (and since this isn't standard Brownian motion we can assume this) we have $Y_t \neq 0~\mathbb P-$a.s. \\
+
+Moving on, we apply the multidimensional It\^{o} formula (for $Z_t = f(X_t,Y_t)$)
+\begin{align*}
+	Z_t &= Z_0 + \int^t_0 f_x(X_u,Y_u)\,dX_u + \int^t_0 f_y(X_u,Y_u)\,dY_u \\
+	&\hphantom{{}={-----------}} + \frac{1}{2}\int^t_0 f_{xx}(X_u,Y_u)\,d\langle X_{(\cdot)}\rangle_u + \frac{1}{2}\int^t_0 f_{yy}(X_u,Y_u)\,d\langle X_{(\cdot)}\rangle_u \\
+	&\hphantom{{}={-----------}} + \frac{1}{2}\int^t_0 f_{xy}(X_u,Y_u)\,d\langle X_{(\cdot)},Y_{(\cdot)}\rangle_u + \frac{1}{2}\int^t_0 f_{yx}(X_u,Y_u)\,d\langle Y_{(\cdot)},X_{(\cdot)}\rangle_u \\
+	&= Z_0 + \int^t_0 f_x(X_u,Y_u)\,dX_u + \int^t_0 f_y(X_u,Y_u)\,dY_u \\
+	&\hphantom{{}={-----------}} + \frac{1}{2}\int^t_0 f_{xx}(X_u,Y_u)\,d\langle X_{(\cdot)}\rangle_u + \frac{1}{2}\int^t_0 f_{yy}(X_u,Y_u)\,d\langle X_{(\cdot)}\rangle_u \\
+	&\hphantom{{}={-----------}} + \int^t_0 f_{xy}(X_u,Y_u)\,d\langle X_{(\cdot)},Y_{(\cdot)}\rangle_u
+\end{align*}
+
+\indent Notice that since second order cross-term partial derivatives are symmetric ($f_{xy} = f_{yx}$) and since the quadratic covariation operation is also symmetric\footnote{$d\langle X, Y\rangle_t = d\langle Y, X\rangle_t$: Is this something to prove?}~we were able to combine the last two integrals. Furthermore, because we are considering independent processes, we have that the quadratic covariance of $X_t,Y_t$ is zero\footnote{I think we prove this later on in the notes.}, so
+\begin{align*}
+	Z_t &= Z_0 + \int^t_0 f_x(X_u,Y_u)\,dX_u + \int^t_0 f_y(X_u,Y_u)\,dY_u \\
+	&\hphantom{{}={Z_0}} + \frac{1}{2}\int^t_0 f_{xx}(X_u,Y_u)\,d\langle X_{(\cdot)}\rangle_u + \frac{1}{2}\int^t_0 f_{yy}(X_u,Y_u)\,d\langle X_{(\cdot)}\rangle_u
+\end{align*}
+
+Substituting our partial derivatives of $f(x,y)$ and differential equations for $dX_t,~dY_t$
+\begin{align*}
+	Z_t &= Z_0 + \int^t_0 \frac{1}{Y_u}[\mu^X_u X_u\,du + \sigma^X_u X_u\,dB_u] - \int^t_0 \frac{X_u}{Y_u^2}[\mu^Y_u Y_u\,du + \sigma^Y_u Y_u\,dB_u] \\
+	&\hphantom{{}={Z_0}} - \int^t_0\frac{X_u}{Y_u}[\sigma^X_u - \sigma^Y_u]\,dB_u + \frac{1}{2}\int^t_0\frac{2X_u}{Y_u^3}[\sigma^Y_u]^2Y_u^2\,du \\
+	&= Z_0 + \int^t_0 \frac{X_u}{Y_u}\big(\mu^X_u - \mu^Y_u + [\sigma^Y_u]^2 - \sigma^X_u\sigma^Y_u\big)\,du + \int^t_0 \frac{X_u}{Y_u}\big(\sigma^X_u - \sigma^Y_u\big)\,dB_u
+\end{align*}
+
+But notice $\frac{X_u}{Y_u} \equiv Z_u$ and so $Z_t$ satisfies the differential equation
+\begin{equation*}
+	Z_t = Z_0 + \int^t_0\mu^Z_u Z_u\,du + \int^t_0 \sigma^Z_u Z_u\,dB_u
+\end{equation*}
+
+where $\mu^Z_u = \mu^X_u - \mu^Y_u + [\sigma^Y_u]^2 - \sigma^X_u\sigma^Y_u$ and $\sigma^Z_u = \sigma^X_u - \sigma^Y_u$
+
+
+\subsection{Example 2}
+
+For constants $c,\alpha_1,\cdots,\alpha_n$ give the SDE satisfied by the process
+\begin{equation*}
+	X_t = \mathrm{exp}\Big(ct + \sum^m_{j=1}\alpha_jB^{(j)}_t \Big)
+\end{equation*}
+
+\underline{Solution}: \\
+
+Let $f(t,x_1,\cdots,x_m) = \mathrm{exp}\Big(ct + \sum^M_{j=1}\alpha_jB^{(j)}_t \Big)$. Then,
+\begin{align*}
+	f_t(t,x_1,\cdots,x_m) &= cf(t,x_1,\cdots,x_m) \\
+	f_{x_i}(t,x_1,\cdots,x_m) &= \alpha_if(t,x_1,\cdots,x_m) \\
+	f_{x_i,x_j}(t,x_1,\cdots,x_m) &= 
+	\begin{cases}
+	 \alpha_i^2f(t,x_1,\cdots,x_m) & \text{if } i = j	 \\
+	 \alpha_i\alpha_jf(t,x_1,\cdots,x_m) & \text{if } i \neq j
+	\end{cases}
+\end{align*}
+
+Then, by It\^{o}'s formula, we have
+\begin{align*}
+	X_t = f(t,x_1,\cdots,x_m) &= f(0,B^{(1)}_0,\cdots,B^{(m)}_0) + \int^t_0 cf(u,B^{(1)}_u,\cdots,B^{(m)}_u)\,du \\
+	&\hphantom{{}={f(0,B^{(1)}_0,\cdots,B^{(m)}_0)}} + \sum^m_{i=1}\int^t_0 \alpha_if(t,B^{(1)}_u,\cdots,B^{(m)}_u)\,dB^{(i)}_u \\
+	&\hphantom{{}={f(0,B^{(1)}_0,\cdots,B^{(m)}_0)}} + \frac{1}{2}\sum^m_{i = 1}\sum^m_{j=1} \int^t_0 \alpha_i\alpha_jf(u,B^{(1)}_u,\cdots,B^{(m)}_u)\,d\langle B^{(i)}_{(\cdot)},B^{(j)}_{(\cdot)}\rangle_u
+\end{align*}
+
+and note that\footnote{This is the part about quadratic covariation being zero of independent processes that we had invoked earlier.}
+\begin{equation*}
+	\langle B^{(i)}_{(\cdot)},B^{(j)}_{(\cdot)}\rangle_t = 
+	\begin{cases}
+	t & \text{if } i = j \\
+	0 & \text{if } i \neq j
+	\end{cases}
+\end{equation*}
+
+\indent That is, the quadratic covariance of a process with itself is just its variance and the quadratic covariation of independent processes is zero. So we may write $d\langle B^{(i)}_{(\cdot)},B^{(i)}_{(\cdot)}\rangle_t = d\langle B^{(i)}_{(\cdot)}\rangle_t = dt$. Therefore, we simplify our equation to
+\begin{align*}
+	X_t = f(t,x_1,\cdots,x_m) &= f(0,B^{(1)}_0,\cdots,B^{(m)}_0) + \int^t_0 cf(u,B^{(1)}_u,\cdots,B^{(m)}_u)\,du \\
+	&\hphantom{{}={f(0,B^{(1)}_0,\cdots,B^{(m)}_0)}} + \sum^m_{i=1}\int^t_0 \alpha_if(t,B^{(1)}_u,\cdots,B^{(m)}_u)\,dB^{(i)}_u \\
+	&\hphantom{{}={f(0,B^{(1)}_0,\cdots,B^{(m)}_0)}} + \frac{1}{2}\sum^m_{i = 1} \int^t_0 \alpha_i^2f(u,B^{(1)}_u,\cdots,B^{(m)}_u)\,du
+\end{align*}
+
+But $f(u,B^{(1)}_u,\cdots,B^{(m)}_u) \equiv X_u$ so we see that $X_t$ satisfies the SDE
+\begin{align*}
+	X_t &= 1 + \int^t_0 cX_u\,du + \sum^m_{n=1}\int^t_0 \alpha_iX_u\,dB^{(i)}_u + \frac{1}{2}\sum^m_{i=1}\int^t_0 \alpha^2_i X_u\,du \\
+	&= 1 + \int^t_0 \Big(c + \frac{1}{2}\sum^m_{i=1}\alpha_i^2 \Big)X_u\,du + \sum^m_{i = 1}\int^t_0 \alpha_i X_u\,dB^{(i)}_u
+\end{align*}
+\\
+
+\section{A Discussion on It\^{o}'s Formula in Multi-/2-Dimensions}
+
+\indent Earlier we were faced with differential quadratic covariation terms $d\langle X^{(i)}_{(\cdot)},X^{(j)}_{(\cdot)}\rangle_t$. Write the quadratic covariation as
+\begin{equation*}
+	\langle X_{(\cdot)},Y_{(\cdot)}\rangle_t = \lim_{|\pi|\to0} \sum^n_{i=1}\big(X_{t_i} - X_{t_{i-1}}\big)\big(Y_{t_i} - Y_{t_{i-1}}\big)
+\end{equation*}
+
+Supposedly in the limit this sum converges almost surely. But we were able to write\footnote{It's obvious that two independent normally distributed processes have covariance zero, but is it obvious that their quadratic covariation is zero?}
+\begin{equation*}
+	\langle B^{(i)}_{(\cdot)},B^{(j)}_{(\cdot)}\rangle_t = 
+	\begin{cases}
+	t & \text{if } i = j \\
+	0 & \text{if } i \neq j
+	\end{cases}
+\end{equation*}
+
+From this can we say anything useful about $\langle X_{(\cdot)},Y_{(\cdot)}\rangle_t$ and its differential?\footnote{I don't really know what we're about to show, so I didn't really know how to preface what we're about to do...}
+
+\subsection{Consider It\^{o}'s Formula in 2-Dimensions}
+
+\indent Omitting the steps showing $d\langle X^{(i)}_{(\cdot)},X^{(i)}_{(\cdot)}\rangle_t = d\langle X^{(i)}_{(\cdot)}\rangle_t = dt$, and $f_{xy}=f_{yx}$, and the symmetry of quadratic covariation, we have
+\begin{align*}
+	f(t,X^{(1)}_t,X^{(2)}_t) &= f(t,X^{(1)}_0,X^{(2)}_0) + \int^t_0 f_u(u,X^{(1)}_u,X^{(2)}_u)\,du \\
+	&\hphantom{{}={}} + \int^t_0 f_{x_1}(u,X^{(1)}_u,X^{(2)}_u)\,dX^{(1)}_u + \int^t_0 f_{x_2}(u,X^{(1)}_u,X^{(2)}_u)\,dX^{(2)}_u \\
+	&\hphantom{{}={}} + \frac{1}{2}\int^t_0 f_{x_1x_1}(u,X^{(1)}_u,X^{(2)}_u)\,d\langle X^{(1)}_{(\cdot)}\rangle_u + \frac{1}{2}\int^t_0 f_{x_2x_2}(u,X^{(1)}_u,X^{(2)}_u)\,d\langle X^{(1)}_{(\cdot)}\rangle_u \\
+	&\hphantom{{}={}} + \int^t_0f_{x_1x_2}(u,X^{(1)}_u,X^{(2)}_u)\,d\langle X^{(1)}_{(\cdot)},X^{(2)}_{(\cdot)}\rangle_t
+\end{align*}
+
+So, for some 2-dimensional process (where does this come from?)
+\begin{align*}
+	X^{(1)}_t &= X^{(1)}_0 + \int^t_0 (\text{???})\,du + \int^t_0 H^{(1,1)}_u\,dB^{(1)}_u + \int^t_0 H^{(1,2)}_u\,dB^{(1)}_u \\
+	X^{(2)}_t &= X^{(2)}_0 + \int^t_0 (\text{???})\,du + \int^t_0 H^{(2,1)}_u\,dB^{(2)}_u + \int^t_0 H^{(2,2)}_u\,dB^{(2)}_u
+\end{align*}
+
+So\footnote{Not obvious to me.}
+\begin{align*}
+	d\langle X^{(1)}_{(\cdot)}\rangle_t &= \big[H^{(1,1)}_t \big]^2\,dt + \big[H^{(1,2)}_t \big]^2\,dt \\
+	d\langle X^{(2)}_{(\cdot)}\rangle_t &= \big[H^{(2,1)}_t \big]^2\,dt + \big[H^{(2,2)}_t \big]^2\,dt \\
+\end{align*}
+
+If we start thinking in ``silly calculus'' we can see
+\begin{gather*}
+	\vdots \\
+	\text{???} \\
+	\vdots
+\end{gather*}
+
+so finally
+\begin{equation*}
+	d\langle X^{(1)}_{(\cdot)},X^{(2)}_{(\cdot)}\rangle_t = H^{(1,1)}_tH^{(2,1)}_t\,dt + H^{(1,2)}_tH^{(2,2)}_t\,dt
+\end{equation*}
+
+
+\section{Some Financial Modelling in Continuous Time}
+
+\indent ``Our model in continuous time markets will use the mathematics that we've been building up and eventually lead to us implementing the mathematics in a computer environment.'' \\
+
+\indent The modelling framework is a probability space $(\Omega,\mathcal F,\mathbb P)$ and a standard Brownian motion with respect to a filtration $\{\mathcal F_t\}_{t\geq0}$. \\
+
+Suppose we have a money market account with price
+\begin{align*}
+	&S^0(t) \text{ at time t} \\
+    	\text{with initial condition } &S^0(0) = 1
+\end{align*}
+
+which pay interest at some continuously compounded rate $r$. Therefore
+\begin{align*}
+	dS^0(t) &= rS^0(t)\,dt \\
+	\implies S^0(t) &= S^0(0)e^{rt}  
+\end{align*}
+
+Suppose we also are interesting in a risky asset with price $S^1(t)$ at time $t$ and that
+\begin{align*}
+	dS^1(t) &= \mu S^1(t)\,dt + \sigma S^1(t)\,dB_t \\
+	\text{with initial condition } S^1(0)& = s_0
+\end{align*}
+
+Then the solution to this SDE\footnote{Proof left as an exercise to the reader?}~is
+\begin{equation*}
+	S^1(t) = s_0e^{(\mu - \frac{1}{2}\sigma^2)t + \sigma B_t}
+\end{equation*}
+
+\indent Our space $(\Omega,\mathcal F,\mathbb P)$ has ``real world'' probability measure $\mathbb P$ (the physical measure) which governs the movement of the asset price. \\
+
+\indent We decide at time $= t$ how much to invest in both $S^0$ and $S^1$ and we require that the decision to invest only on information in the past (this is similar to the efficient market hypothesis). How do we model this? We do this from our filtration $\{\mathcal F_t\}_{t\geq0}$
+
+\begin{definition} A \underline{trading strategy} is a process $H = (H^0,H^1)$ where $H^i_t$ is the number of units of $S^i$ held at time $= t$. \\
+
+We require that $H = (H^0,H^1)$ be adapted to our filtration $\mathcal F_t$ (i.e. $H^i \in \mathcal F_t$).
+\end{definition}
+
+\begin{definition} For a given trading strategy, the \underline{wealth process} is a function of our strategy.
+\begin{equation*}
+	V_t(H) = H^0_tS^0_t + H^1_tS^1_t
+\end{equation*} 
+\end{definition}
+
+\subsection{An Illustrative Example in Discrete Time}
+
+\indent In discrete time once $(S^0_{n-1},S^1_{n-1})$ are known at $t = n-1$ the components $H^0_n, H^1_n$ are chosen given wealth
+\begin{align*}
+	V_n(H) = H^0_nS^0_{n-1} + H^1_nS^1_{n-1}
+\end{align*}
+
+\indent That is, you can only base your information of how much to invest now based on the price at the previous time step. \\
+
+If we assume our portfolio is self-financed (no net injections of new capital) then we have
+\begin{equation*}
+	V_n(H) = H^0_nS^0_n + H^1_nS^1_n = H^0_{n+1}S^0_n + H^1_{n+1}S^1_{n+1} 
+\end{equation*}
+
+Then
+\begin{align*}
+	V_n - V_{n-1} &= H^0_n\big(S^0_n - S^0_{n-1}\big) + H^1_n\big(S^1_n - S^1_{n-1}\big) \\
+	\Delta V &= H^0_n\Delta S^0 + H^1_n\Delta S^1
+\end{align*}
+
+So, the self-financing condition implies that $\Delta V$ comes only from the $\Delta S^i$.
+
+\subsection{Returning to Continuous Time}
+
+\indent We gave the previous formula in discrete time to show more transparently what will be occurring in continuous time since it becomes a bit more technical.
+
+\begin{definition} The portfolio process $H$ is \underline{self-financing} if
+\begin{equation*}
+	dV_t = H^0_t\,dS^0_t + H^1_t\,dS^1_t
+\end{equation*}
+
+If we use It\^{o}'s formula, formally, we get
+\begin{equation*}
+	dV_t = H^0_t\,dS^0_t + H^1_t\,dS^1_t + (dH^0_t)S^0_t + (dH^1_t)S^1_t + \text{QV terms}
+\end{equation*}
+
+\indent So the self-financing condition implies that $dH^i_t = 0$. So any increase in units of one can only come from a corresponding decrease in another.
+\end{definition}
+
+If $H$ is self-financing then we have
+\begin{align*}
+	V_t &= V_0 + \int^t_0 H^0_u\,dS^0_u + \int^t_0 H^1_u\,dS^1_u \\
+	&= V_0 + \int^t_0 H^0_urS^0_u\,du + \int^t_0 H^1_u\big(\mu S^1_u\,du + \sigma S^1_u\,dB_u\big) \\
+	&= V_0 + r\int^t_0 H^0_uS^0_u\,du + \mu\int^t_0 H^1_uS^1_u\,du + \sigma\int^t_0 H^1_uS^1_u\,dB_u
+\end{align*}
+
+We have some technical requirements on $[0,T]$ including
+\begin{enumerate}
+	\item $\int^t_0 |H^0_u|\,du < \infty$ a.s.
+	\item $\int^t_0 (H^1_u)^2\,du < \infty$ a.s
+	\item etc...\footnote{``We require a few other things but I don't want to say.''}
+\end{enumerate}
+
+\begin{definition} If $X$ is any price process then the \underline{discounted price process} is defined to be
+\begin{align*}
+	\overline{X}_t &= \big(S^0_t\big)^{-1}X_t \\
+	&= (e^{rt})^{-1}X_t \\
+	&= e^{-rt}X_t \\
+	\implies \overline{S}^1_t &= e^{-rt}S^1_t \\
+	\implies \overline{V}_t &= e^{-rt}V_t
+\end{align*}
+\end{definition}
+
+\begin{lemma} The portfolio process $H = (H^0,H^1)$ is self-financing if and only if we can write
+\begin{equation*}
+	\overline{V}_t = \overline{V}_0 + \int^t_0 H^1_u\,d\overline{S}^1_u
+\end{equation*}
+and notice that $\overline{V}_0 = V_0$. \\
+
+\indent Being able to write our discount value process like this permits us to discard a lot of the terms in the non-discounted price process $V_t$.
+\end{lemma}
+
+\underline{Exercise}: Prove if self-financing holds then $\overline{V}_t$ satisfies the above and vice-versa.\footnote{Strategy: Apply It\^{o}'s formula to show that all extraneous terms $ = 0$.}
+
+
+\begin{definition} A \underline{European contingent claim} is a positive $\mathcal F$-measurable random variable $h$. \\
+
+\indent For example, if $h_T = (S^1_t - K)^+$ then $h$ is a European call option with strike $K$ and maturity $T$.
+\end{definition}
+
+Our future goal will be to find the price at time $= 0$ of a European contingent claim.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

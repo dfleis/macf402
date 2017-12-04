@@ -1,0 +1,263 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{enumerate} 
+
+\newenvironment{proposition}[2][Proposition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Assignment 2}
+\author{David Fleischer -- 27101449\\ 
+MACF 402 - Mathematical \& Computational Finance II}
+ 
+\maketitle
+
+%=========Problem 1===========%
+{\bf Problem 1}.
+
+\begin{align*}
+	\mathbb E[I(T)] &= \mathbb E\Big[\sum^{n-1}_{i=0} H_{t_i}\big(B_{t_{i+1}} - B_{t_i}\big)\Big] \\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[H_{t_i}\big(B_{t_{i+1}} - B_{t_i}\big)\Big] \quad \text{(by linearity of expectation)}\\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[\mathbb E\big[ H_{t_i}\big(B_{t_{i+1}} - B_{t_i}\big)| \mathcal F_{t_i} \big]\Big] \quad \text{(by the tower property)} \\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[H_{t_i} \mathbb E\big[\big(B_{t_{i+1}} - B_{t_i}\big)| \mathcal F_{t_i} \big]\Big] \quad \text{(since $H_{t_i}$ is $\mathcal F_{t_i}$-measurable)} \\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[H_{t_i} \big(\mathbb E\big[B_{t_{i+1}} \big| \mathcal F_{t_i}\big] - \mathbb E\big[B_{t_i}\big| \mathcal F_{t_i} \big]\big)\Big]  \quad \text{(by linearity of conditional expectation)} \\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[H_{t_i} \big(\mathbb E\big[B_{t_{i+1}} \big| \mathcal F_{t_i}\big] - \mathbb E\big[B_{t_i}\big]\big)\Big]  \quad \text{(since $B_{t_i}$ is $\mathcal F_{t_i}$-measurable)} \\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[H_{t_i} \big(\mathbb E\big[B_{t_{i}}\big] - \mathbb E\big[B_{t_i}\big]\big)\Big]  \quad \text{(since $B_{t_i}$ is a martingale)} \\
+	&= \sum^{n-1}_{i=0} \mathbb E\Big[H_{t_i} \cdot 0\Big] = 0
+\end{align*}
+
+
+%=========Problem 2===========%
+{\bf Problem 2}.
+
+\indent Since we are looking for the SDE satisfied by $\ln S_t$ we consider $f(x) = \ln x$. Computing our derivatives:
+\begin{equation*}
+	f_x(x) = \frac{1}{x} \quad f_{xx}(x) = -\frac{1}{x^2}
+\end{equation*}
+
+and so from It\^{o}'s formula we have
+\begin{equation*}
+	f(x) = f(0) + \int^t_0 \frac{1}{x} \,dx - \frac{1}{2}\int^t_0 \frac{1}{x^2} \,d\langle x_{(\cdot)}\rangle_u
+\end{equation*}
+
+Evaluating for $S_t$ gives us
+\begin{equation*}
+	\ln S_t = S_0 + \int^t_0 \frac{1}{S_u} \,dS_u - \frac{1}{2}\int^t_0 \frac{1}{S_u^2} \,d\langle S_{(\cdot)}\rangle_u
+\end{equation*}
+
+We have
+\begin{equation*}
+	dS_t = rS_t\,dt + \sigma S_t\,dW_t
+\end{equation*}
+
+Thus
+\begin{equation*}
+	\,d\langle S_{(\cdot)}\rangle_t = (\sigma S_t)^2\,dt
+\end{equation*}
+
+and so
+\begin{align*}
+	\ln S_t &= S_0 + \int^t_0 \frac{1}{S_u} \big[rS_u\,du + \sigma S_u\,dW_u \big] - \frac{1}{2}\int^t_0 \frac{1}{S_u^2} (\sigma S_u)^2\,du \\
+	&= S_0 + \int^t_0 \big[r\,du + \sigma\,dW_u \big] - \frac{1}{2}\int^t_0 \sigma^2\,du \\
+	&= S_0 + \int^t_0 \big[r - \frac{1}{2}\sigma^2\big] \,du + \int^t_0 \sigma\,dW_u
+\end{align*}
+
+
+
+%=========Problem 3===========%
+{\bf Problem 3}.
+
+%=========Problem 5===========%
+{\bf Problem 5}. Consider the process $X_t$ given by the SDE
+\begin{equation*}
+	dX_t = -X_t\,dt + e^{-t}\,dB_t
+\end{equation*}
+
+with $X_0 = 0$ and $B_t$ standard Brownian motion. Show that
+\begin{equation*}
+	\mathbb E[X_t] = 0
+\end{equation*}
+
+and 
+\begin{equation*}
+	\mathrm {Var}[X_t] = te^{-2t}
+\end{equation*}
+
+by solving ODEs for $\mathbb E[X_t]$ and $\mathbb E[X_t^2]$. \\
+
+{\bf Solution 5}. In integral form our process $X_t$ is given by the SDE
+\begin{equation*}
+	X_t = X_0 - \int^t_0 X_u \,du + \int^t_0 e^{-u}\,dB_u
+\end{equation*}
+
+Taking the expectation 
+\begin{align*}
+	\mathbb E[X_t] &= \mathbb E\Big[0- \int^t_0 X_u \,du + \int^t_0 e^{-u}\,dB_u\Big] \\
+	&= - \mathbb E\Big[\int^t_0 X_u \,du\Big] + \mathbb E\Big[\int^t_0 e^{-u}\,dB_u\Big] \quad \text{(by linearity)} \\
+	&= - \mathbb E\Big[\int^t_0 X_u \,du\Big] 
+\end{align*}
+
+\indent Where the final line was achieved by realizing that $e^{-u}$ is $\mathcal F_t$-measurable and thereby applying the theorem verified in Problem 1. Moving on, we quickly verify that Fubini's theorem is not inappropriate here
+
+\begin{align*}
+	\mathbb E\Big[\int^t_0 X_u\,du \Big] &= \int_\Omega \int^t_0 X_u(\omega) \,du\,d\mathbb P(\omega) \\
+	&= \int^t_0 \int_\Omega X_u(\omega) \,d\mathbb P(\omega)\,du \\
+	&= \int^t_0 \mathbb E[X_u]\,du
+\end{align*}
+
+And so
+\begin{align*}
+	\mathbb E[X_t] &= -\mathbb E\Big[\int^t_0 X_u \,du\Big] \\
+	&= -\int^t_0 \mathbb E[X_u]\,du
+\end{align*}
+
+Now we see that we have a natural ODE in $X_t$. Letting $\phi(t) = \mathbb E[X_t]$
+\begin{align*}
+	\phi(t) &= -\int^t_0 \phi(u)\,du \\
+	\implies d\phi(t) &= -\phi(t)\,dt \\
+	\implies \frac{d\phi(t)}{\phi(t)} &= -\,dt \\
+	\implies \ln \phi(t) &= -t + c \\
+	\implies \phi(t) &= e^{-t + c} \\
+	&= Ce^{-t}
+\end{align*}
+
+Using our initial condition $X_0 = 0 = \mathbb E[X_0]$
+\begin{align*}
+	0 &= Ce^{-t} \\
+	\implies C = 0
+\end{align*}
+
+and so we're left with the conclusion
+\begin{equation*}
+	\phi(t) = \mathbb E[X_t] = 0
+\end{equation*}
+
+as desired. Now, working on $\mathbb E[X_t^2]$, we lean on It\^{o}'s formula noting that since we are interested in $X_t^2$ we should consider $f(x) = x^2$. From It\^{o}'s formula
+\begin{equation*}
+	X_t^2 = X_0 + \int^t_0 2X_t\,dX_t + \frac{1}{2}\int^t_0 2\,d\langle X_{(\cdot)}\rangle_t
+\end{equation*}
+
+Since we were given $X_t$ in the question we quickly compute $dX_t$ and $d\langle X_{(\cdot)}\rangle_t$
+\begin{align*}
+	dX_t &= -X_t\,dt + e^{-t}\,dB_t \\
+	d\langle X_{(\cdot)}\rangle_t &= \big(e^{-t}\big)^2\,dt
+\end{align*}
+
+Thus,
+\begin{align*}
+	X_t^2 &= X_0 + \int^t_0 2X_u\,dX_u + \frac{1}{2}\int^t_0 2\,d\langle X_{(\cdot)}\rangle_u \\
+	&= 0 + \int^t_0 2X_u\Big[-X_u\,du + e^{-u}\,dB_u\Big] + \int^t_0 \big(e^{-u}\big)^2\,du \\
+	&= - \int^t_0 2X_u^2\,du + 2\int^t_0 e^{-u}X_u\,dB_u + \int^t_0 e^{-2u}\,du \\
+	&= - \int^t_0 2X_u^2\,du + 0 + \int^t_0 e^{-2u}\,du \quad \text{(from Problem 1)} \\
+	&= \int^t_0 e^{-2u} - 2X^2_u \,du
+\end{align*}
+
+From this we see a natural ODE in $X_t^2$. Letting $\psi(t) = X_t^2$ 
+\begin{align*}
+	\psi(t) &= \int^t_0 e^{-2u} - 2\psi(u)\,du \\
+	d\psi(t) &= \big(e^{-2u} - 2\psi(t)\big)\,dt \\
+	\psi'(t) &= e^{-2u} - 2\psi(t)
+\end{align*}
+
+and so we go about solving our ODE in the typical manner
+\begin{align*}
+	e^{2t}\psi'(t) + 2e^{2t}\psi(t) &= 1 \\
+	\frac{d}{dt}\Big(e^{2t}\psi(t)\Big) &= 1 \\
+	\int \frac{d}{dt}e^{2t}\psi(t)\,dt &= \int 1\,dt \\
+	e^{2t}\psi(t) &= t + C \\
+	\psi(t) &= te^{-2t} + Ce^{-2t}
+\end{align*}
+
+Using our initial condition $X_0 = 0 \iff X_0^2 = 0 = \psi(0)$
+\begin{align*}
+	\psi(0) = 0 &= 0\cdot e^{-2\cdot0} + Ce^{-2\cdot 0} \\
+	\implies C &= 0
+\end{align*}
+
+Thus we conclude with
+\begin{align*}
+	\psi(t) = X_t^2 &= te^{-2t} \\
+	\therefore \quad \mathbb E[X_t^2] = \mathbb E[te^{-2t}] &= te^{-2t} 
+\end{align*}
+
+%=========Problem 6===========%
+{\bf Problem 6}. Recall that stochastic integrals
+\begin{equation*}
+	\int^T_0 H_u\,dB_u
+\end{equation*}
+
+are martingales provided that the integrand $H$ is adapted and satisfies some technical (integrability) conditions. Using I\^{o}'s formula find a process $X_t$ such that
+\begin{equation}
+	B^3_t - X_t
+\end{equation}
+
+is a martingale.
+
+{\bf Solution 6}. With $f(t,x,y) = x^3 - y$ we take our derivatives
+\begin{align*}
+	&f_t(t,x,y) = 0 \\
+	&f_x(t,x,y) = 3x^2 \quad f_{xx}(t,x,y) = 6x \\
+	&f_y(t,x,y) = -1 \quad f_{yy}(t,x,y) = 0 \\
+	&f_{xy}(t,x,y) = 0
+\end{align*} 
+
+So, by It\^{o}'s formula evaluating $x = B_t$ and $y = X_t$, we have
+\begin{align*}
+	B_t^3 - X_t &= B^3_0 - X_0 + \int^t_0 3B_u^2\,dB_u + \int^t_0 (-1)\,dX_u + \frac{1}{2}\int^t_0 6B_u\,d\langle B_{(\cdot)}\rangle_u \\
+	&= B^3_0 - X_0 + 3\int^t_0 B_u^2\,dB_u - \int^t_0 \,dX_u + 3\int^t_0 B_u\,du
+\end{align*}
+
+where the last line was achieved from recognizing that the quadratic variation of Brownian motion $\langle B_{(\cdot)}\rangle_t = dt$. Notice that without $-X_t$ we would be left with $B_t^3 = B^3_0 + 3\int^t_0 B_u^2\,dB_u + 3\int^t_0 B_u\,du$, showing us that $B_t^3$ is indeed not a martingale since it has a drift term $3\int^t_0 B_u\,du$.
+
+%=========Problem 7===========%
+{\bf Problem 7}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

@@ -1,0 +1,344 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}} % \vec command
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+\renewcommand{\mod}{\mathrm{~mod~}}
+
+\newcount\colveccount % column vector \colvec{# entries}{x1}{x2}...{xn}
+\newcommand*\colvec[1]{
+        \global\colveccount#1
+        \begin{pmatrix}
+        \colvecnext
+}
+\def\colvecnext#1{
+        #1
+        \global\advance\colveccount-1
+        \ifnum\colveccount>0
+                \\
+                \expandafter\colvecnext
+        \else
+                \end{pmatrix}
+        \fi
+}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Numerical Methods \& Computational Finance}
+\date{November 5 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Monte-Carlo Methods \& Quasi Monte-Carlo Methods}
+
+\indent Quasi Monte-Carlo methods (QMC) is extremely important for high dimensional problems. Instead of sampling/simulating random/pseudorandom numbers naively, the idea is to use a \underline{highly uniform point set} (HUPS). Say we want to estimate $\mu$ as a function of some s-dimensional hypercube
+\begin{equation*}
+	\mu = \int_{[0,1)^s} f(\vec{u})\,du = \E \left[ f(\vec{U}) \right]
+\end{equation*}
+
+where $\vec{U}$ is a vector of $U\sim Unif(0,1)$ random variables. If $s = 2$ we have uniform points over the unit square and
+\begin{equation*}
+\vec{u} = \colvec{2}{u_1}{u_2}
+\end{equation*}
+
+\indent However, we should note that using true random variables will produce some clumping of points in the unit square. Using the HUPS will be more diffuse across the box and cover the 2-dimensional square in a ``more systematic'' way. The key is that the \underline{empirical distribution} induced by a point set $P_n$ is closer to uniform than some true random uniform vector. Drawing some arbitrary box $A$ in our unit square we want\footnote{I'm not quite sure what we mean by this.}
+\begin{equation*}
+	\P(A) \approx \mathrm{Vol}(A)
+\end{equation*}
+
+\indent Consider all rectangular boxes in $[0, 1)^s$ with a corner at the origin and $P_n = $ the HUPS. We count the fraction of points $P_n$ in the box and we want the difference to be small. Taking the supremum over all boxes, let
+\begin{equation*}
+	D_n^* = \sup_{\vec{v} \in [0,1)^s} \left| \prod^s_{j = 1} v_j - \frac{1}{n} \left| P_n \cap \prod^n_{j = 1} [0, v_j) \right| \right|
+\end{equation*}
+
+we say that $D_n^*$ is the ``starred discrepancy'' and $\prod^s_{j = 1} v_j$ is the volume of box size $v_j$ in the $j^{\text{th}}$ coordinate. Unless you have some real/clear structure this will be difficult to compute. The goal is to minimize $D_n^*$.
+
+\begin{definition} Given a sequence $\vec{u}_1, \vec{u}_2, ...$ in $[0, 1)^s$ for which $P_n = \left\{ \vec{u}_1, ... \vec{u}_n \right\}$ has $D^*_n \sim \mathcal O \left( \frac{ (\log n)^s }{n} \right)$, then $P_n$ is a \underline{low-discrepancy point set} .
+\end{definition}
+
+There's lots of ways to achieve $ \mathcal O \left( \frac{ (\log n)^s }{n} \right)$, but we should note that with random i.i.d. points
+\begin{equation*}
+	D^*_n \sim \mathcal O \left( \frac{ \sqrt{ \log \log n } }{ n } \right)
+\end{equation*}
+
+\indent We think of the HUPS as being ``more'' uniform (based on a specific definition of uniformity) than true uniform random points. The use of HUPS is for multivariate numerical integration problems where we wish to find a deterministic error bound for our problem. In true Monte-Carlo problems our error bounds are probabilistic.
+
+\subsection{Error Bounds}
+
+Consider
+\begin{equation*}
+	\hat{\mu}_{QMC} = \frac{1}{n} \sum^n_{i = 1} f(\vec{u}_i)
+\end{equation*}
+
+to estimate
+\begin{equation*}
+	\mu = \int_{[0, 1)^s} f(\vec{u}) \,d\vec{u}
+\end{equation*}
+
+If $f$ is of \underline{bounded variation} then we can show that, letting $V(f)$ being the variation of $f$,
+\begin{equation*}
+	\left| \hat{\mu}_{QMC} - \mu \right| \leq D^*_n V(f)
+\end{equation*}
+
+\indent This is good: We have an error of $\mathcal O \left( \frac{ (\log n)^s }{n} \right)$ if $D^*_n$ is a low-discrepancy point set. However, is this better than true Monte-Carlo? We have the Monte-Carlo error\footnote{Where does this come from?}
+\begin{equation*}
+	\mathcal O \left( \frac{1}{\sqrt{n}} \right) \quad \text{(note that this is a probabilistic error)}
+\end{equation*}
+
+But\footnote{Really?}
+\begin{equation*}
+	\frac{ (\log n)^n }{ n } = \mathcal O\left( \frac{1}{\sqrt{n}} \right)
+\end{equation*}
+
+hence
+\begin{equation*}
+	\lim_{n\to\infty} \frac{ \frac{ (\log n)^s }{ n } }{ \frac{ 1 }{ \sqrt{n} }} = 0
+\end{equation*}
+
+But, if we have $s$ large, say $s = 10$ then the convergence to $\mathcal O \left( \frac{1}{\sqrt{n}} \right)$ is slow. For $s = 10$ we would need need $n \geq 1.2144 \times 10^{39}$ to satisfy 
+\begin{equation*}
+	\frac{ (\log n)^10 }{n} \leq \frac{1}{\sqrt{n}}
+\end{equation*}
+
+So, we have two problems
+\begin{enumerate}
+	\item The conditions $f$ must satisfy may be difficult to confirm.
+	\item Any asymptotic advantage of the deterministic estimator may take a while to kick in, for large $s$.
+\end{enumerate}
+
+\subsection{Randomized Quasi-Monte-Carlo}
+
+\indent A solution to the two problems is to introduce randomized quasi-Monte-Carlo methods. We add some randomness to our point set $P_n$ so that
+\begin{enumerate}
+	\item We may compute error/variance estimators.
+	\item Improve the quality of $P_n$.
+\end{enumerate}
+
+After adding some uniform noise to $P_n$ we have a new point set $\tilde{P}_n$ so that
+\begin{enumerate}
+	\item Each $\vec{U}_i \in \tilde{P}_n$ is $Unif\left( [0,1)^2 \right)$.
+	\item The HUPS property is preserved (i.e. points are still dependent on each other -- ``more'' uniform than true uniform variates).
+\end{enumerate}
+
+\subsubsection{Cranley-Patterson (1976)}
+\underline{Example}: ``This is an example that you'd never use'' \\
+
+The idea is, given our point set $P_n = \{\vec{u}_1, ..., \vec{u_n}\}$, we have
+\begin{equation*}
+	\vec{u}_i + Unif\left( [0,1)^s \right) \textrm{ mod } 1
+\end{equation*}
+
+More succinctly, letting $\vec{v} = Unif\left( [0,1)^s \right)$,
+\begin{equation*}
+	\vec{u}_i + \vec{v}
+\end{equation*}
+
+where $+$ represents elementwise addition. So
+\begin{align*}
+	\vec{u}_i + \vec{v} \textrm{ mod } 1 &= \left( (u_{i_1} + v_1) \textrm{ mod } 1, ..., (u_{i_s} + v_s \textrm{ mod } 1 \right) \\
+	&=: \tilde{\vec{U}}_i
+\end{align*}
+
+Hence
+\begin{equation*}
+	\tilde{P}_n = \left\{\tilde{\vec{U}}_1, \tilde{\vec{U}}_2, ... ,\tilde{\vec{U}}_n \right\}
+\end{equation*}
+
+Then, the randomized QMC estimator
+\begin{equation*}
+	\hat{\mu}_{RQMC} = \frac{1}{n} \sum^n_{i = 1} f\left( \tilde{\vec{U}}_i \right)
+\end{equation*}
+
+is unbiased\footnote{Proof left as an exercise to the reader.}~ and if we study its variance we can show that $\var\left[ \hat{\mu}_{RQMC} \right] \leq \var \left[ \hat{\mu}_{Crude} \right]$.
+
+\subsubsection{Comparison of Crude and RQMC Estimators}
+
+\indent We have some theoretical results that permit us to meaningfully compare the variance of our RQMC estimator with the variance of the crude Monte-Carlo estimator, for some HUPS and randomizations.
+
+\subsubsection{Some Interesting HUPS}
+We have some noteworthy HUPS to think about:
+\begin{enumerate}
+	\item Korobov Rule (1959) \\
+
+\indent To generate our vector of points we pick some number $a$ relatively prime to $n$. Then, take
+\begin{equation*}
+	\vec{u}_i = \left[ \frac{i}{n} \left(1, a, a^2 \mod n, ... a^{s - 1} \mod n\right)\right] \mod 1
+\end{equation*}
+	
+	\item Sobol Sequence 
+	\item Halton Sequences 
+	\item ``Low Discrepancy Sequences"
+\end{enumerate}
+
+\subsection{Effective Dimensions}
+
+\indent In practice, our problem may have some large ``nominal'' dimensionality $s$, but really only depends on a smaller subset of dimensions. QMC is particularly successful when a function $f$ has large nominal dimensionality but small effective dimensionality. That this, there is some $d\in\N$ such that $f$ can be well-approximated by a sum of $d$ (or fewer) dimensional functions. \\
+
+\underline{Example}: Mortgages \\
+
+\indent Consider a function of 360 uniform variates (i.e. a mortgage with monthly payments over 30 years). Then,
+\begin{equation*}
+	f(u_1, ..., u_{360}) \approx u_1 + u_2 + ... + u_{360}
+\end{equation*}
+
+\indent Here we have a 360-dimensional function approximated by a sum of 360 1-dimensional functions. That is, the effective dimensions of $f$ is 1
+
+\underline{Example}: Asian Options \\
+
+\indent We may use a HUPS $P_n$ to create a sample of $n$ paths of a risky asset price that needs to be simulated to price some path-dependent derivative. One point, $\vec{u}_i$, corresponds to one path for an asset. We want to estimate
+\begin{equation*}
+	\mu = \E \left[ e^{-rT} g_T \right] 
+\end{equation*}
+
+for some payoff at time $T$, $g_T$. We want to rewrite this as an $s$-dimensional integration problem
+\begin{equation*}
+	\mu = \int_{[0,1)^s} f(\vec{u})\,d\vec{u}
+\end{equation*}
+
+\indent So, for an Asian option under the Black-Scholes model, take $t_j = j\Delta, \Delta = \frac{T}{s}$, where $s = $ the number of monitoring points to compute the average. We have
+\begin{equation*}
+	g_T = \max\left\{0, \frac{1}{s}\sum^s_{j = 1} S(t_j) - K \right\}
+\end{equation*}
+
+and
+\begin{equation*}
+	S(t_j) = S_0 \exp \left\{ \left(r - \frac{1}{2}\sigma^2\right) j\Delta + \sigma\sqrt{\Delta t} \left(Z_1 + ... + Z_j\right) \right\}
+\end{equation*}
+
+where $Z_j = \Phi^{-1}(u_j)$, and $u_1, ..., u_s \sim Unif(0,1)$ i.i.d. We can write the value of the call option
+\begin{equation*}
+	C^{Asian}_0 = \int_{[0,1)^s} e^{-rT} \max \left\{0, \frac{1}{s} \sum^s_{j = 1} S_0 \exp \left[ \left(r - \frac{1}{2}\sigma^2\right) j\Delta + \sigma\sqrt{\Delta t} \left(\Phi^{-1}(u_1) + ... + \Phi^{-1}(u_j)\right) \right] \right\}
+\end{equation*}
+
+Now, suppose we use a HUPS
+\begin{equation*}
+	P_n = \{\vec{u}_1, ..., \vec{u}_n\}
+\end{equation*}
+
+and
+\begin{equation*}
+	\tilde{P}_{n,1}, ..., \tilde{P}_{n,m}
+\end{equation*}
+
+are $m$ i.i.d. copies of a randomized version of $P_n$ (i.e. generate $m$ i.i.d. noise samples $\vec{v}_1, ..., \vec{v}_m$ from $Unif\left([0,1)^s\right)$). For brevity, let
+\begin{equation*}
+	\tilde{P}_{n, l} = \left\{ \vec{w}_i = \left( \vec{u}_i + \vec{v}_l \right) \mod 1, l = 1, 2, ..., m \right\}
+\end{equation*}
+
+then the estimator
+\begin{equation*}
+	\hat{\mu}_l = \sum^n_{i = 1} f(\vec{w}_i)
+\end{equation*}
+
+is the discount payoff estimator from a path generated using $\vec{w}_i$. We have the variance
+\begin{equation*}
+	\var\left[\hat{\mu}_{RQMC}\right] = \frac{1}{m(m - 1)} \sum^m_{l = 1} \left( \hat{\mu}_l - \hat{\mu}_{RQMC} \right)^2
+\end{equation*}
+
+We may compare our variance with the variance from other techniques.\footnote{But we don't.}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

@@ -1,0 +1,331 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{enumerate} 
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Welcome to Measure Theory}
+\date{September 17 2015 \\ Last update: \today{}}
+\maketitle
+
+%% SECTION: MEASURE THEORETIC PREREQUISITES
+\begin{section}{Measure Theoretic Prerequisites}
+
+\begin{definition} \label{def:sigmaalgebra} For a sample space $\Omega$ we say that a collection of subsets \underline{$\mathcal F$ is a $\sigma$-algebra} if $\mathcal F$ satisfies three conditions:
+\begin{enumerate}
+	\item $\Omega \in \mathcal F$ \label{omegainF}
+	\item If $A \in \mathcal F$ then $\overline{A} \in \mathcal F$ \label{compinF}
+	\item For any countable set of subsets in $\mathcal F$, the union of these subsets is in $\mathcal F$. Symbolically, if $(A_n)_{n\geq1} \in \mathcal F$ then $\bigcup^\infty_{n = 1} A_n \in \mathcal F$ \label{countableuinF}
+\end{enumerate}
+\end{definition}
+
+\noindent A set $A \in \mathcal F$ is called a measurable set\footnote{This is something worthy of definition itself but is omitted in this course.}.
+
+%% LEMMA 1
+\begin{lemma} \label{lem:finiteunion} If $A_1, A_2, ... , A_N \in \mathcal F$ then $\bigcup^\infty_{n = 1} A_N \in \mathcal F$.
+	\begin{proof}
+		From Definition \ref{def:sigmaalgebra} Conditions \ref{omegainF} \& \ref{compinF} we have $\overline{\Omega} \in \mathcal F$. But $\Omega$ is our sample space, so, $\overline{\Omega} = \emptyset \in \mathcal F$. By Condition \ref{countableuinF} we have $\bigcup^{\infty}_{n = 1} A_n \in \mathcal F$. Construct $(A_n)_{n\geq1}$ where for $n \geq N + 1, A_n = \emptyset$. So,
+		\begin{flalign*}
+			&& \bigcup^{\infty}_{n = 1} A_n &\in \mathcal F && \text{but,} \\
+			&& \bigcup^{\infty}_{n = 1} A_n &= \bigcup^N_{n = 1} A_n \cup \emptyset \cup \emptyset \cup \emptyset \cup  \cdots = \bigcup^N_{n = 1} A_n && \\
+			&& \implies \bigcup^N_{n = 1} A_n &\in \mathcal F
+		\end{flalign*}
+	\end{proof}
+\end{lemma}
+
+%% LEMMA 2
+\begin{lemma} \label{lem:intersection} If $(A_n)_{n \geq 1} \in \mathcal F$ then $\bigcap^{\infty}_{n = 1}A_n \in \mathcal F$.
+	\begin{proof}
+		By De Morgan's laws we have,
+		\begin{flalign*}
+			&& \overline{A_1 \cup A_2 \cup \cdots } = \overline{A_1} \cap \overline{A_2} \cap \cdots &\iff (\cap^{\infty}_{n = 1} A_n) = \overline{(\cup^{\infty}_{n = 1} \overline{A_n})} && \text{but,} \\
+			&& \cup^{\infty}_{n = 1} \overline{A_n} &\in \mathcal F && \text{From Definition \ref{def:sigmaalgebra} Condition \ref{countableuinF} and} \\
+			&& \overline{(\cup^{\infty}_{n = 1} \overline{A_n})} &\in \mathcal F && \text{From Condition \ref{compinF}} \\
+			&& \implies \overline{(\cup^{\infty}_{n = 1} \overline{A_n})} = (\cap^{\infty}_{n = 1} A_n) &\in \mathcal F
+		\end{flalign*}
+	\end{proof}
+\end{lemma}
+
+%% LEMMA 3
+\begin{lemma} \label{lem:finiteintersection} If $(A_n)_{n \geq 1} \in \mathcal F$ then $\bigcap^{N}_{n = 1} A_n \in \mathcal F$. That is, Lemma 2 holds for finite intersections.
+	\begin{proof}
+		From Definition \ref{def:sigmaalgebra} Condition \ref{omegainF} we have $\Omega \in F$. From Lemma \ref{lem:intersection} we have $\bigcap^{\infty}_{n = 1} \in \mathcal F$. Construct $(A_n)_{n\geq1}$ where for $n \geq N + 1, A_n = \Omega$. So,
+		\begin{flalign*}
+			&& \bigcap^{\infty}_{n = 1} A_n &\in \mathcal F && \text{but,} \\
+			&& \bigcap^{\infty}_{n = 1} A_n &= \bigcap^N_{n = 1} A_n \cap \Omega \cap \Omega \cap \Omega \cap \cdots = \bigcap^N_{n = 1} A_n && \\
+			&& \implies \bigcap^N_{n = 1} A_n &\in \mathcal F
+		\end{flalign*}
+	\end{proof}
+\end{lemma}
+
+\noindent \underline{Examples}: Consider two extreme cases,
+\begin{enumerate}
+	\item $\mathcal F = \{\emptyset, \Omega\}$
+	\item $\mathcal F = \mathcal P(\Omega) = 2^\Omega$
+\end{enumerate}
+
+Both satisfy Definition \ref{def:sigmaalgebra} Condition \ref{omegainF} by construction.The first satisfies Condition \ref{compinF} since $\overline{\emptyset} = \Omega \in \mathcal F$ and $\overline{\Omega} = \emptyset \in \mathcal F$. The first also satisfies Condition \ref{countableuinF} since a countable union of $\emptyset$ and/or $\Omega$ will be either $\emptyset$ (in the case of unions of strictly $\emptyset$) or $\Omega$ (all other cases). Thus, the first example is a $\sigma$-algebra. The second satisfies Condition \ref{compinF} since if $A \in \Omega$ then $\{A\} \in \mathcal P(\Omega)$ and $\overline{\{A\}} = (\mathcal P(\Omega) \setminus \{A\}) \in \mathcal P(\Omega)$  (by definition of the power set). Finally, the second example satisfies Condition \ref{countableuinF} since, by construction, unions of elements in the power set is already an element in the power set. Thus, the second example is a $\sigma$-algebra.
+
+\begin{definition} \label{def:smallsigma} If $\mathcal C$ is any collection of subsets of a sample space $\Omega$ (not necessarily a $\sigma$-algebra), we let $\sigma(\mathcal C)$ denote the \underline{smallest $\sigma$-algebra} containing $\mathcal C$. That is, $\sigma(\mathcal C)$ must contain $\Omega$ and become closed under intersection and union (with respect to $\Omega$). We say $\mathcal C$ generates $\sigma(\mathcal C)$.
+\end{definition}
+
+\noindent Example \\
+Let $A \subsetneqq \Omega$ and $\mathcal C = \{A\}$ then it is clear that $\{A, \overline{A}\}$ is not closed under unions, but
+\begin{equation*}
+	\sigma(\mathcal C) = \{A, \overline{A}, \emptyset, \Omega\}
+\end{equation*}
+
+\begin{definition} \label{def:borelsets} If $\mathcal C = \{A \subseteq \mathbb R^n : A \text{ is open\footnotemark~in } \mathbb R^n\}$ then $\sigma(\mathcal C)$ is called \underline{the family of Borel sets} on $\mathbb R^n$. We write in this case $\sigma(\mathcal C) = \mathcal B(\mathbb R^n)$.
+\footnotetext{Worthy of definition.}
+\end{definition}
+
+\begin{proposition} $\mathcal B(\mathbb R) = \sigma(\{(-\infty, x] : x \in \mathbb R\})$ \\
+To do: Think about this.
+\end{proposition}
+
+%% SUBSECTION: PROBABILITY MEASURES
+\subsection{Probability Measures}
+
+\begin{definition} \label{def:probmeasure} A function $\mathbb P : \mathcal F \rightarrow \mathbb R$ is called a \underline{probability measure} if
+\begin{enumerate}
+	\item $\mathbb P(\Omega) = 1$
+	\item $0 \leq \mathbb P(A) \leq 1$
+	\item If $A_1, A_2, ...$ are disjoint in $\mathcal F$ then $\mathbb P(\bigcup^{\infty}_{n = 1} A_n) = \sum^\infty_{n = 1} \mathbb P(A_n)$
+\end{enumerate}
+\end{definition}
+
+\noindent Some consequences of Definiton \ref{def:probmeasure} (stated without proof... to do: state with proof):
+\begin{enumerate}
+	\item $\mathbb P(\overline{A}) = 1 - \mathbb P(A), A \in \mathcal F$
+	\item $\mathbb P(\emptyset) = 0$
+	\item $\mathbb P(A \cup B) = \mathbb P(A) + \mathbb P(B) - \mathbb P(A \cap B)$
+	\item If $A \subseteq B$ then $\mathbb P(A) \leq \mathbb P(B)$
+	\item $\mathbb P(\bigcup^\infty_{n = 1} A_n) \leq \sum^\infty_{n = 1}\mathbb P(A_n)$ (for not necessarily disjoint $A_n$)
+	\item etc... (there's more but we didn't elaborate -- these are usual results you would except from a basic probability course)
+\end{enumerate}
+
+\begin{definition} \label{def:distributionfxn} A function $F: \mathbb R \rightarrow \mathbb R$ is a distribution function if
+\begin{enumerate}
+	\item $\forall x,y \in \mathbb R, x \leq y \implies F(x) \leq F(y)$
+	\item $\lim_{x\to -\infty} F(x) = 0, \lim_{x\to \infty} F(x) = 1$
+	\item $F$ is right continuous, that is, $\forall a \in \mathbb R^+, \lim_{x\to a^+} F(x) = F(a)$
+\end{enumerate}
+\end{definition}
+
+\begin{proposition} If $\mathbb P$ is a probability measure on $(\mathbb R, \mathcal B(\mathbb R))$\footnote{To be a probability measure $\mathbb P$ on $(\mathbb R, \mathcal B(\mathbb R))$ means to be a function $\mathbb P:\mathcal B(\mathbb R) \rightarrow \mathbb R$.}   then $F(x) = \mathbb P((-\infty, x])$ is a distribution function.
+
+To do: Figure out proof ...``This is easy to prove, but hard to prove the converse''.
+\end{proposition}
+
+\end{section}
+
+%% SECTION: INTEGRATION
+\begin{section}{Integration}
+
+\begin{definition} \label{def:simplefxn} A function $s:\Omega \rightarrow \mathbb R$ is \underline{simple} if we can write
+\begin{equation*}
+	s = \sum^N_{n = 1} a_n \mathds 1_{A_n}
+\end{equation*}
+where $a_n \geq 0$ and $A_1, A_2, ..., A_N$ are disjoint sets in our $\sigma$-algebra $\mathcal F$.
+\end{definition}
+
+\begin{definition} \label{def:expectation} Let $s$ be a simple function. Then the \underline{expectation (the integral)} of $s$ is
+\begin{equation*}
+	\mathbb E[s] = \int s\,d\mathbb P = \int_\Omega s(\omega)\,\mathbb P(d\omega) = \sum^N_{n = 1} a_n \mathbb P(A_n)
+\end{equation*}
+\end{definition}
+
+\begin{proposition} If $(s_n)_{n\geq1}$ is a sequence of increasing simple functions bound by some function $s$,
+\begin{equation*}
+	s_n \leq s_{n+1} \leq s
+\end{equation*}
+and $s_n(\omega) \longrightarrow s(\omega)$ as $n \longrightarrow \infty, \forall \omega \in \mathbb R$ then,
+\begin{equation*}
+	\int s_n\,d\mathbb P \longrightarrow \int s\,d\mathbb P
+\end{equation*}
+\end{proposition}
+
+\begin{definition} \label{def:randomvar} A function $X: \Omega \rightarrow \mathbb R$ is called a \underline{random variable}, or $\mathcal F$-measurable, if $\{\omega \in \Omega: X(\omega) < \lambda\} \in \mathcal F$ for all $\lambda \in \mathbb R$. We write $X \in \mathcal F$ (i.e. $X$ is $\mathcal F$-measurable).
+\end{definition}
+
+\noindent From Definition \ref{def:randomvar} we can prove a bunch of facts like the sum of two random variables is a random variable, etc... Some consequences of our definitions:
+\begin{enumerate}
+	\item $\cdots$
+	\item $\cdots$
+	\item If you have a sequence of random variables $X_n \in \mathcal F, n \in \mathbb N$ then the $\inf X_n \in \mathcal F$ and the $\sup X_n \in \mathcal F$ (i.e. these are random variables).
+\end{enumerate}
+
+\noindent We're doing this so that we can show that it's possible to approximate any random variable with simple functions or a sequence of simple functions.
+
+\begin{proposition} If $X \geq 0$ is a random variable then there exists (a sequence?) $s_n$ such that $s_n$ is increasing and converges to $X$, denoted $s_n \uparrow X$.
+\end{proposition}
+
+\begin{proposition} If $X \in \mathcal F$ and $X\geq0$ and $(s_n), (s_m)$ are simple, with $s_n\uparrow X$ and $s_m\uparrow X$, then
+\begin{equation*}
+	\lim_n \int s_n\,d\mathbb P = \lim_m \int s_m\,d\mathbb P
+\end{equation*}
+\end{proposition}
+
+\begin{definition} If $X \in \mathcal F$ and $X \geq 0$ then
+\begin{equation*}
+	\mathbb E[X] = \lim \int s_n\,d\mathbb P
+\end{equation*}
+when $s_n\uparrow X$. For a general $X \in \mathcal F$ write
+\begin{equation*}
+	X = X^+ - X^-
+\end{equation*}
+and define
+\begin{equation*}
+	\mathbb E[X] = \mathbb E[X^+] - E[X^-] \quad \text{(although you can't have $\infty - \infty$, etc...)}
+\end{equation*}
+\end{definition}
+
+\noindent This has all the basic properties of expectation
+\begin{enumerate}
+	\item $\mathbb E[\alpha X_1 + \beta X_2] =  \alpha\mathbb E[X_1] + \beta\mathbb E[X_2]$
+	\item $\cdots$
+	\item Monotone convergences: If $X_n\uparrow X$ then $\mathbb E[X_n] \longrightarrow \mathbb E[X]$
+	\item If $X_n \geq 0$ then $\mathbb E[\liminf_n X_n] \leq \liminf_n \mathbb E[X_n]$ (Fatou's Lemma)
+\end{enumerate}
+
+%% SUBSECTION: INTEGRABILITY
+\subsection{Integrability}
+
+\begin{definition} \label{def:integrable} A nonnegative $X \in \mathcal F$ is \underline{integrable} if $\mathbb E[X] < \infty$. To show this we write $X \in \ L^1(\mathcal F)$.
+\end{definition}
+
+\begin{proposition}\hfill
+\begin{enumerate}
+	\item $X, Y \in L^1 \implies X + Y \in L^1$ \\
+		$\lambda X \in L^1, \forall\lambda \in \mathbb R$ \\
+		$\mathbb E[\lambda X] = \lambda \mathbb E[X]$
+	\item $X \in L^1 \iff |X| \subset L^1$ \\
+		$|\mathbb E[X]| \leq \mathbb E[|X|]$
+	\item $|X| \leq Y \in L^1 \iff |X| \in L^1$
+\end{enumerate}
+\end{proposition}
+
+%% THEOREM: DOMINATED CONVERGENCE 1
+\begin{theorem}{(Lebesgue) Dominated Convergence Theorem} \hfill\\
+Let $(X_n)_{n \in \mathbb N} \in \mathcal F$. If $\exists Y \in L^1(\Omega, \mathcal F, \mathbb P)$ such that $|X_n| \leq Y$ for all $n$, if
+\begin{align*}
+	X_n(\omega) &\longrightarrow X(\omega) \quad \text{a.s.\footnotemark} \quad \text{then,} \\
+	\mathbb E[X_n] &\longrightarrow \mathbb E[X] \quad \text{a.s}
+\end{align*}
+\footnotetext{A property holds ``almost surely'' (a.s.) if it holds everywhere except on a set of measure 0.}
+Proof omitted.
+\end{theorem}
+
+%% LEMMA 4
+\begin{lemma} Suppose $Z \in \mathcal F$ and $\mathbb E[\mathds 1_A Z] = \int_A Z\,d\mathbb P \leq 0$ for all $A \in \mathcal F$. Then $Z \leq 0$ a.s.\footnote{$\mathbb P(\{\omega \in \Omega : Z(\omega) > 0\}) = 0$}
+\end{lemma}
+
+%% THEOREM: DOMINATED CONVERGENCE 2
+\begin{theorem}{(Another) Dominated Convergence Theorem} \hfill\\
+If $X, Y, (X_n)_{n\geq1} \in \mathcal F$ with $Y \in L^1$ and
+\begin{flalign*}
+	&& &|X_n| \leq Y && \text{$\forall \,n$, a.s and} && \\
+	&& &X_n \longrightarrow X && \text{a.s. then,} && \\
+	&& &X_n \in L^1 && \text{and} && \\\
+	&& &\mathbb E[X_n] \longrightarrow \mathbb E[X] && \text{a.s}
+\end{flalign*}
+Proof omitted.
+\end{theorem}
+
+\begin{definition} For $1 \leq p < \infty$ let \underline{$L^p$} consist of all random variables $X \in \mathcal F$ such that
+\begin{equation*}
+	\mathbb E[|X|^p] < \infty
+\end{equation*}
+We can prove that, for $X, Y \in L^p$,
+\begin{equation*}
+	\mathbb E[|X + Y|^p] \leq 2^{p-1}(E[|X|^p] + E[|Y|^p]) < \infty 
+\end{equation*}
+So $L^p$ is a linear space\footnote{From some theorem we have, for $a, b \geq 0$ and $1 \leq p < \infty, (a + b)^p \leq 2^{p-1}(a^p + b^p)$}
+\end{definition}
+
+
+\end{section}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

@@ -1,0 +1,481 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{bm} % bold in mathmode \bm
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}} % \vec command
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+
+\newcommand{\bigtau}{\text{{\large $\bm \tau$}}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Mathematical Finance}
+\date{November 19 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Theoretical Basis for American Options}
+
+We first start with a few mathematical prerequisites for American options.
+
+\subsection{Stopping Times}
+
+\begin{definition} A stopping time $\tau$ is a random variable taking values $[0, \infty]$ (where $\tau = \infty$ corresponds to the even that the system never stopped) and satisfying
+\begin{equation*}
+	\{ \tau \leq t \} \in \mathcal F_t
+\end{equation*}
+\end{definition}
+
+Note that for some time $t \geq 0$ we have
+\begin{equation*}
+	\left\{\tau > t - \frac{1}{n} \right\} = \overline{ \left\{ \tau \leq t - \frac{1}{n} \right\} } \in \mathcal F_{t - \frac{1}{n}} \quad \forall_{n \geq 1}
+\end{equation*}
+
+Therefore, since $\mathcal F_{t - \frac{1}{n}} \subseteq \mathcal F_t$ we have that
+\begin{equation*}
+	\{ \tau = t \} = \{ \tau \leq t \} \cap \left( \bigcap^\infty_{n = 1} \left\{ \tau > t - \frac{1}{n} \right\} \right)
+\end{equation*}
+
+where $\{ \tau \leq t \} \in \mathcal F_t$ and $\bigcap^\infty_{n = 1} \left\{ \tau > t - \frac{1}{n} \right\} \in \mathcal F_{t - \frac{1}{n}} \subseteq \mathcal F_t$. We know that an intersection of $\mathcal F_t$-measurable elements is itself $\mathcal F_t$-measurable, so
+\begin{equation*}
+	\{ \tau = t \} \in \mathcal F_t
+\end{equation*}
+
+Now, let $X_t$ be a continuous $\mathcal F_t$ adapted random variable. Define
+\begin{equation*}
+	\tau_m = \inf \left\{ t \geq 0: X(t) = m \right\} \quad m \in \R
+\end{equation*}
+
+If $X_t$ never hits $m$ we say that $\tau_m = \infty$. We can show that $X_t$ satisfies the definition of a stopping time.
+
+\subsection{Stopped Processes}
+
+Consider a stopped process
+\begin{equation*}
+	X(t \land \tau) \quad t \land \tau := \min(t, \tau)
+\end{equation*}
+
+\begin{theorem}{Optimal Sampling Theorem} A martingale (sub-/super-martingale) stopped at a stopping time is still a martingale (sub-/super-martingale)
+\end{theorem}
+
+\indent The intuition is clear since the expectation of a stopped process is just the value that the process was stopped at.
+
+\section{Perpetual American Put Option}
+
+\indent Consider an American put option with no expiry (also known as a Russian option). Under the risk neutral measure $\Q$ we have that
+\begin{equation*}
+	dS_t = rS_t\,dt + \sigma S_t\,dW_t
+\end{equation*}
+
+and the perpetual American put option pays\footnote{We omit the $\max$ specification since a holder of this option would never exercise if the $\Gamma(S) \leq 0$. The holder may just way (potentially forever) until we pass 0.}
+\begin{equation*}
+	\Gamma(S) = K - S(t) \quad t \geq 0
+\end{equation*}
+
+The price of the perpetual put can be shown to be
+\begin{equation*}
+	V^*(x) = \max_{\tau \in \bigtau} \E_\Q \left[ e^{-rT} \left(K - S(\tau) \right)\right]
+\end{equation*}
+
+where $\bigtau$ is the set of all possible times to exercise the option. We have $X = S(0)$, and
+\begin{equation*}
+	\tau = \infty \implies V^*(x) = e^{-r\tau} \left(K - S(\tau) \right) = 0
+\end{equation*}
+
+since the option is never exercised. We choose the exercise time $\tau$ to be a stopped time from a class (set) $\bigtau$ of stopping times. \\
+
+\indent If the option is not exercised then its payoff is zero. We say that $V^*(x)$ is the initial capital required to hedge a short position (i.e. option writer) in the put, regardless of the $\tau \in \bigtau$ chosen by the long counterparty. \\
+
+\indent Note that no matter at what time we are currently at there is always an infinite amount of time until the option expires. That is any potential exercise date just like any other since the remaining life of the option is always infinity. Therefore, we must conclude that the optiomal exercise time of the perpetual option cannot dependent on time and must only depend on the value of $S(t)$. We say that the long party should exercise the option as soon as $S(t)$ falls sufficiently below $K$ (in the case of a put). That is, the long party will exercise at the first time $S(t) \leq L$. We denote the optimal $L$ as $L^*$. Our task will be to find this $L^*$.
+
+\subsection{Pricing Over Arbitrary Exercise}
+
+Let $W(t)$ be a Brownian motion under $\Q$. Define
+\begin{equation*}
+	X(t) = \mu(t) + W(t) \quad \mu \in \R
+\end{equation*}
+
+\indent Set $\tau_m = \inf \left\{ t \geq 0: X(t) = m \right\}$ for $m \geq 0$. That is, $\tau_m$ the stopping time corresponding to when $X(t)$ hits $m$, then we have\footnote{This is the Laplace transform/MGF of $\tau_m$.}
+\begin{equation*}
+	\E_\Q \left[ e^{-\lambda \tau_m} \right] = e^{-m \left( -\mu + \sqrt{\mu^2 + 2\lambda} \right)} \quad \lambda \geq 0
+\end{equation*}
+
+where $e^{\lambda \tau_m} = 0$ if $\tau_m = \infty$.
+
+\begin{proof} {\em Basic sketch}: The idea is that if we consider
+\begin{equation*}
+	Y_t = e^{\sigma X(t) - \lambda t} = e^{\sigma W(t) - \frac{1}{2}\sigma^2 t}
+\end{equation*}
+
+and apply It\^{o}'s
+\begin{equation*}
+	dY(t) = \sigma Y(t)\,dW(t) \quad \text{(this is a martingale since it has no drift term)}
+\end{equation*}
+
+\indent Then the optimal sampling theorem implies that the stopped process $M(t) = Y(t \land \tau_m)$ is also a martingale. We use the optimal sampling \& some converge theorems to prove the above result.
+\end{proof}
+
+The key to this is that, for $\lambda > 0$
+\begin{equation*}
+	\E_\Q \left[ e^{-\lambda \tau_m} \mathds 1_{\tau_m < \infty} \right] = e^{-m(-\mu + \sqrt{\mu^2 + 2\lambda})}
+\end{equation*}
+
+and we can show that
+\begin{align*}
+	\P (\tau_m < \infty) &= \E_\Q \left[ \mathds 1_{\tau_m < \infty} \right] \\
+	&= \lim_{h \to 0} \E_\Q \left[ e^{-\lambda \tau_m} \mathds 1_{\tau_m < \infty} \right] \\ 
+	&= \lim_{h \to 0} e^{-m(-\mu + \sqrt{\mu^2 + 2\lambda})} \\
+	&= e^{m\mu - m|\mu|}
+\end{align*}
+
+\indent The idea is for us to use this result to price the option. If $\mu \geq 0$ then the drift in $X(t)$ is zero or up towards some level $m$ and
+\begin{equation*}
+	\Q ( \tau_m < \infty ) e^{m \mu - m \mu} = 1
+\end{equation*}
+
+and if the drift of $X$ is down away from some level $m$
+\begin{equation*}
+	\Q ( \tau_m < \infty ) = e^{-2\mu|\mu|} < 1
+\end{equation*}
+
+Recall that 
+\begin{equation*}
+	S_t = S_0 e^{\sigma W_t + (r - \frac{1}{2}\sigma^2)t}
+\end{equation*}
+
+\indent The owner of this put will set some level $S < K$ and exercise the option the first time $S(t) = L$. If $S(0) \leq L$ we exercise at time 0, hence
+\begin{equation*}
+	V_L(S_0) = K - S(0) \quad \text{if } S_0 \leq L \\
+\end{equation*}
+
+and if $S_0 > L$ we have $\tau_L = \inf \left\{ t \geq 0 : S(t) = L \right\}$ and at exercise date $\tau_L$ the payoff of the option is worth
+\begin{equation*}
+	K - S(\tau_L) = K - L
+\end{equation*}
+
+then
+\begin{align*}
+	V_L(S_0) &= \E_\Q \left[ e^{-r\tau_L} \left( K - S_{\tau_L} \right) \right] \\
+	&= (K - L) \E_\Q \left[e^{-r \tau_L} \right] \quad \forall_{S_0 > L}
+\end{align*}
+
+\begin{lemma}
+\begin{equation*}
+	V_L(x) =
+	\begin{cases}
+		K - x & \text{if } S_0 \leq L \\
+		\frac{K - L}{ \left(\frac{x}{L}\right)^\frac{-2r^2}{\sigma^2} } & \text{if } S_0 > L
+	\end{cases}
+\end{equation*}
+\end{lemma}
+
+\begin{proof} If $x = L$ and $\tau_L = 0$ and $V_L(x) = K - L$,
+\begin{align*}
+	\tau_L &= \inf \left\{ t \geq 0: S(t) = L \right\} \\
+	&= \inf \left\{ t \geq 0: xe^{\sigma W_t + (r - \frac{1}{2}\sigma^2)t} = T \right\}
+\end{align*}
+
+We have $S_t = L$ if and only if
+\begin{align*}
+	\sigma W_t + \left( r - \frac{1}{2}\sigma^2 \right) t &= \log \frac{L}{x} \\
+	\iff  -W_t - \frac{1}{\sigma} \left( r - \frac{1}{2}\sigma^2 \right)t &= \frac{1}{\sigma} \log \frac{x}{L}
+\end{align*}
+
+if $W_t$ is Brownian then we have $-W_t$ is also Brownian. Define $X_t = -W_t - \frac{1}{\sigma}\left( r - \frac{1}{2}\sigma^2 \right)t$. Let 
+\begin{align*}
+	\lambda &= r \\
+	\mu &= -\frac{1}{\sigma} \left( r - \frac{1}{2}\sigma^2 \right) \\
+	m &= \frac{1}{\sigma} \log \frac{x}{L} > 0
+\end{align*}
+
+Then we have
+\begin{align*}
+	X_t &= \mu t + W_t \\
+	\tau_m &= \tau_L
+\end{align*}
+
+Hence,
+\begin{equation*}
+	\E_\Q \left[ e^{-r \tau_L } \right] = \E_\Q \left[ e^{-\lambda \tau_m } \right]
+\end{equation*}
+
+which, by the previous theorem we know that
+\begin{equation*}
+	\E_\Q \left[ e^{-\lambda \tau_m } \right] = e^{ -m(-\mu + \sqrt{\mu^2 + 2\lambda} )}
+\end{equation*}
+
+but with our parameterizations we have
+\begin{align*}
+	-\mu + \sqrt{\mu^2 + 2\lambda} &= -\left[ -\frac{1}{\sigma}\left(r - \frac{1}{2}\sigma^2 \right)\right] + \sqrt{\left[ -\frac{1}{\sigma} \left( r - \frac{1}{2}\sigma^2 \right) \right]^2 + 2r} \\
+	&= \frac{1}{\sigma}\left(r - \frac{1}{2}\sigma^2 \right) + \sqrt{ \frac{1}{\sigma^2} \left( r - \frac{1}{2}\sigma^2 \right)^2 + 2r} \\
+	&= \frac{r}{\sigma} - \frac{\sigma}{2} + \sqrt{ \frac{1}{\sigma^2} \left( r^2 - r\sigma^2 + \frac{1}{4}\sigma^4 \right) + 2r} \\
+	&= \frac{r}{\sigma} - \frac{\sigma}{2} + \sqrt{ \frac{r^2}{\sigma^2} + r + \frac{1}{4}\sigma^2} \\
+	&= \frac{r}{\sigma} - \frac{\sigma}{2} + \sqrt{ \left( \frac{r}{\sigma} + \frac{\sigma}{2} \right)^2  } \\
+	&= \frac{r}{\sigma} - \frac{\sigma}{2} + \frac{r}{\sigma} + \frac{\sigma}{2} \\
+	&= \frac{2r}{\sigma}
+\end{align*}
+
+Thus
+\begin{align*}
+e^{ -m(-\mu + \sqrt{\mu^2 + 2\lambda} )} &= e^{-m \frac{2r}{\sigma} } \\
+	&= e^{-\frac{1}{\sigma} \left( \log \frac{x}{L} \right) \frac{2r}{\sigma} } \\
+	&= \exp \left[ \log \left( \frac{x}{L} \right)^{-\frac{2r}{\sigma^2}} \right] \\
+	&= \left( \frac{x}{L} \right)^{-\frac{2r}{\sigma^2}}
+\end{align*}
+
+as desired.
+\end{proof}
+
+\indent From this value we may determine the optimal value $L$, say $L^*$, at which the option should be exercised. To determine $L^*$ from 
+\begin{equation*}
+	V_L(x) = (K - L) L^\frac{2r}{\sigma^2} x^\frac{-2r}{\sigma^2} \quad x > L
+\end{equation*}
+
+we should find $L^*$ which maximizes $V_L(x)$ for some fixed $x$. For fixed $x$ we have the function
+\begin{align*}
+	g(L) &= (K - L)L^\frac{2r}{\sigma^2} \\
+	g(0) &= 0 \\
+	\lim_{L \to \infty} g(L) &= -\infty
+\end{align*}
+
+and we solve $g'(L) = 0$ so that $g(L)$ is tangent to $V_L(x)$. The optimal $L^*$ satisfies
+\begin{equation*}
+	L^* = \frac{2r}{2r + \sigma^2}K \quad L^* \in (0, K)
+\end{equation*}
+
+and we compute $g(L^*)$ to find the optimal value. If we use $\frac{\partial}{\partial x} V_L(x)$ we find that
+\begin{equation*}
+	\frac{\partial}{\partial x} V_L =
+	\begin{cases}
+		-1 \quad 0 \leq x < L^* \\
+		-(K - L^*) \frac{2r}{\sigma^2 x} \left( \frac{x}{L^*} \right)^\frac{-2r}{\sigma^2} \quad x < L^*
+	\end{cases}
+\end{equation*}
+
+\indent We have that $V_{L^*}(x)$ and $\frac{\partial}{\partial x} V_{L^*}(x)$ are continuous at $L^*$ (i.e. we satisfy the smooth pasting condition) because $y = (K - L^*) \left( \frac{x}{L^*} \right)^\frac{-2r}{\sigma^2}$ is tangent to $y = K - x$ at $L^*$. However, the second derivative $\frac{\partial^2}{\partial x^2} V_{L^*}(L^*)$ is undefined since
+\begin{equation*}
+	\frac{\partial^2}{\partial x^2} V_{L^*}(x) = 
+	\begin{cases}
+		0 & 0 \leq x < L^* \\
+		(K - L^*) \frac{2r(2r + \sigma^2)}{\sigma^2x^4} \left( \frac{x}{L^*} \right)^\frac{-2r}{\sigma^2} & x > L^*
+	\end{cases}
+\end{equation*}
+
+which has right handed and left handed limits that are not equal to each other at $L^*$. This is a problem since we cannot plug our derivatives into the Black-Scholes equation. However, we can form a ``linear complimentary problem'' as we did in the previous lecture. For $x > L^*$ the derivative is well defined, so (recalling that $\frac{\partial V_L}{\partial t} = 0$ since we are time independent)
+\begin{equation*}
+	rV_{L^*}(x) - rxV_{L^*}'(x) - \frac{1}{2}\sigma^2x^2V_{L^*}''(x) = 0 \quad x > L^*
+\end{equation*}
+
+and for $0 \leq x < L^*$ we have
+\begin{equation*}
+		rV_{L^*}(x) - rxV_{L^*}'(x) - \frac{1}{2}\sigma^2x^2V_{L^*}''(x) = 0 \quad rK \leq x \leq L^*
+\end{equation*}
+
+which are both ODEs in $x$. This gives us the linear complimentary conditions
+\begin{align*}
+	&V(x) \geq (K - x)^+ \quad x \geq 0 \\
+	&rV(x) - rxV'(x) - \frac{1}{2}\sigma^2x^2V''(x) \geq 0 \\
+	&\text{Equality holds in \underline{either} condition 1 or 2 above}
+\end{align*}
+
+\indent For the second condition we have $V_{L^*}''(L^*)$ is undefined, but by replacing it with either its left or right handed limits
+\begin{equation*}
+	V_{L^*}''(L^*-) \quad \text{or} \quad V_{L^*}''(L^*+)
+\end{equation*}
+
+then our inequalities hold. We have that the three conditions determine $V_{L^*}(x)$ if and only if $V_{L^*}(x)$ is the only bounded differentiable function that satisfies $L^*$.
+
+\subsection{Probabilistic View}
+
+\begin{theorem}{some name...} If we the Black-Scholes SDE
+\begin{equation*}
+	dS_t = rS_t\,dt + \sigma S_t\,dW_t
+\end{equation*}
+
+and
+\begin{equation*}
+	\tau_{L^*} = \inf \left\{ t \geq 0: S_t = L^* \right\}
+\end{equation*}
+
+and
+\begin{equation*}
+	L^* = \frac{2r}{2r + \sigma^2}K
+\end{equation*}
+
+then $e^{-rt}V_{L^*}(S_t)$ is a supermartingale under $\Q$ and the stopped process
+\begin{equation*}
+	e^{-r (t\land\tau_{L^*})} V_{L^*}(S(t\land\tau_{L^*}))
+\end{equation*}
+
+is \underline{not} a supermartingale, but actually a regular martingale.
+\begin{proof} Proof omitted.
+\end{proof}
+\end{theorem}
+
+From this we have the corollaries
+\begin{corollary} If $\bigtau$ is the set of all stopping times we maximize over, then
+\begin{equation*}
+	V_{L^*}(x) = \max_{\tau \in \bigtau} \E_\Q \left[ e^{-r\tau} (K - S(\tau)) \right]
+\end{equation*}
+\end{corollary}
+
+\begin{corollary} Consider an agent with initial capital
+\begin{equation*}
+	X(0) = V_{L^*}(S(0))
+\end{equation*}
+
+Let $\Delta(t) = V_{L^*}'(S(t))$ be the hedge ratio and define the consumption process
+\begin{equation*}
+	C(t) = rK \mathds 1_{S(t) < L^*}
+\end{equation*}
+
+\indent That is, $C(t)$ gives us the rate at which we can consume ($rK$) cash whenever $S_t < L^*$. In this case we have that the long counterparty should have exercised but didn't. Then, value of the agent's portfolio $X(t)$ satisfies
+\begin{equation*}
+	X(t) = V_{L^*}(S(t))
+\end{equation*}
+
+for all $t$ until the option is exercised. In particular,
+\begin{equation*}
+	X(t) \geq (K - S(t))^+
+\end{equation*}
+
+\indent That is, we are ``overhedged'' in a sense by $C(t)$ and so we may withdraw the amount specified by the consumption process and still have the perfect hedge against the long counterparty.
+\end{corollary}
+
+We note that
+\begin{equation*}
+	dX_t = \Delta_t\,dS_t + r(X_t - \Delta_t S_t)\,dt - C_t\,dt
+\end{equation*}
+
+where $dX_t$ is our portfolio value, $\Delta_t\,dS_t$ is the asset value, $r(X_t - \Delta_t S_t)\,dt$ is the bank account value, and $C_t\,dt$ is the consumption process that we are permitted. When the asset value is beyond $L^*$ we can afford to remove cash from the bank account. For any period when $S_t < L^*$ we have
+\begin{equation*}
+	\Delta_t \equiv V_{L^*}'(t) = -1
+\end{equation*}
+
+and
+\begin{equation*}
+	X_t = V_{L^*}(S_t) = K - S_t
+\end{equation*}
+
+where $K$ is the amount in our bank account and $-S_t$ represents 1 unit short in the stock. Critically, we have $K$ and not $e^{rt}K$, permitting us to consume precisely $e^{rt}$. \\
+
+If we divide $[0, \infty)$ into two sets we get
+\begin{equation*}
+	\mathcal S = \left\{ x \geq 0: V_{L^*}(x) = (K - x)^+ \right\}
+\end{equation*}
+
+the ``stopping set''\footnote{The set of asset values at which the stopping time occurred?}~ and
+\begin{equation*}
+	\mathcal C = \left\{ x \geq 0: V_{L^*}(x) > (K - x)^+ \right\}
+\end{equation*}
+
+the ``contraction set'',\footnote{The set of asset values at which we can consume from the bank account?}~with time of entry into $\mathcal S$ is $\tau_{L^*}$.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

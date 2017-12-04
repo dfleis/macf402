@@ -1,0 +1,219 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}} % \vec command
+
+%% DAVIDS MACRO KIT %%
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\renewcommand{\P}{\mathbb P}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\var}{\mathrm{Var}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{Simulation and Computational Finance}
+\date{November 3 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{Simulation \& Monte-Carlo}
+
+We continue our discussion on Monte-Carlo methods.
+
+\subsection{Tilted Densities}
+
+\indent A special case of the importance sampling estimator to reduce variance that works fairly well is to use the tilted density of the desired pdf. Using tilted densities is a common method of generating a sampling density $g$ from the original density $f$. We use the moment generating function of $X \sim f$. Denote the MGF of $X$
+\begin{equation*}
+	m_X(t) = \E_f\left[ e^{tX} \right]
+\end{equation*}
+
+Then we say that the \underline{tilted density} of $f$ is given by
+\begin{equation*}
+	f_t(X) = \frac{ e^{tx}f(x) }{ m_X(t) }
+\end{equation*}
+
+for $t \in (-\infty, \infty)$. The tilted density is useful since a random variable with density $f_t$ tends to be larger than a random variable with density $f$, when $t > 0$, and smaller than $t < 0$. That is, we may sample more frequently from the region where we expect $X$ to be large by tilting the density with $t > 0$. \\
+
+\underline{Example}:  \\
+
+\indent Suppose $X_1, ..., X_n$ are i.i.d. random variables generated from the density $f_i$. Let $S_n := \sum^n_{i = 1} X_i$ and suppose we wish to estimate
+\begin{equation*}
+	\theta := \P(S_n \geq a)
+\end{equation*}
+
+for some constant $a$. If $a$ is large so that we have some extremely rare event we should use the importance sampling estimator to compute $\hat{\theta}$. Since $S_n$ is large when the $X_i$'s are large it makes sense to sample each $X_i$ from the its tilted density function $f_{i,t}$, for some $t > 0$. That is,
+\begin{align*}
+	\theta &= \E \left[ \mathds 1_{S_n \geq a} \right] \\
+	&= \E_f \left[ \mathds 1_{S_n \geq a} \prod^n_{i = 1} \frac{ f_i(X_i) }{ f_{i, t}(X_i) } \right] \\
+	&= \E_f \left[ \mathds 1_{S_n \geq a} \left( \prod^n_{i = 1} m_{X_i}(t) \right) e^{ -tS_n } \right] 
+\end{align*}
+
+where $\E_f$ denotes the expectation with respect to $X_i$ under the tilted density $f_{i,t}$, and $m_{X_I}(t)$ is the MGF of $X_i$. Writing $m(t) := \prod^n_{i = 1} m_{X_i}(t)$, we find that the importance sampling estimator (tilted density estimator) $\hat{\theta}$ is 
+\begin{equation*}
+	\hat{\theta} \leq M(t)e^{-ta}
+\end{equation*}
+
+We can show that a good choice for $t$ would be one that minimizes the upper bound $M(t)e^{-ta}$.
+
+\subsection{Conditional Monte-Carlo}
+
+\indent The idea to conditional Monte-Carlo estimators is to apply to tower property. That is, given a sample we will condition on a simpler/related model. \\ 
+
+\underline{Example}: \\
+
+\indent Consider the correlated Brownian process (Heston model/Cox-Ingersoll-Ross model for volatility)
+\begin{align*}
+	dS_t &= rS_t\,dt + \sqrt{v_t}S_t\,dB^{(1)}_t \\
+	dV_t &= \kappa(\alpha - v_t)\,dt + \sigma \sqrt{v_t}\,dB^{(2)}_t \\
+	d\langle B^{(1)}_{(\cdot)}, B^{(2)}_{(\cdot)} \rangle_t &= \rho\,dt
+\end{align*}
+
+Conditioning on the path $\left\{ v_s: 0 \leq s \leq T \right\}$ we have
+\begin{equation*}
+	\E_\Q \left[ \right(S_T - K\left)^+ | v_s, 0 \leq s \leq T \right]
+\end{equation*}
+
+\indent We can show that this turns out to be a Black-Scholes-like model (see assignment 4), which depends on the realized volatility
+\begin{equation*}
+	\frac{1}{T} \int^T_0 v_s\,ds
+\end{equation*}
+
+Thus, our conditional estimator $\hat{\mu}_{cond}$ is
+\begin{equation*}
+	\hat{\mu}_{cond} = \frac{1}{n} \sum^n_{i = 1} \E_\Q \left[ e^{-rT} \left(S_T - K\right)^+ | v_s, 0 \leq s \leq T \right]
+\end{equation*}	
+
+\indent Under the crude estimator we needed a discretization over the $n$ time steps and simulate a price process by generating $2n$ random variates $B^{(1)}, B^{(2)}$. However, under the conditional estimator we no longer need to simulate the price process and only require the simulation of the volatility process involving only $n$ variates $B^{(1)}$.
+
+\subsection{Stratified Sampling}
+
+\indent The stratified sampler is similar to condition: The idea is to break the range of the quantity of interest into discrete strata. If we split the values a random variable $X$ into $m$ discrete strata we may then estimate the parameter in each strata separately and meaningfully recombine the stratified estimators together (i.e. weighted average). \\
+
+\indent In order for stratified sampling to be effective we have to have {\em a priori} knowledge of how and where to stratify the range of $X$. We normalize the size of the strata by the contribution of the variance of the strata to the whole range. The problem is that the variance of the strata are usually not knowable in advance (if it was then we likely wouldn't need to use estimation). To solve this we usual run some pilot sample to determine the sample variance $s_k^2$ for stratum $k$.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

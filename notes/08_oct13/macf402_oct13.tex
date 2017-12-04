@@ -1,0 +1,464 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{dsfont} % for indicator function \mathds 1
+\usepackage{tikz,pgf,pgfplots}
+\usepackage{enumerate} 
+\usepackage[multiple]{footmisc} % for an adjascent footnote
+\usepackage{graphicx,float} % figures
+\usepackage{csvsimple,longtable,booktabs} % load csv as a table
+\usepackage{listings,color} % for code snippets
+
+\newenvironment{theorem}[2][Theorem:]{\begin{trivlist} %% Theorem Environment
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newtheorem{definition}{Definition}
+\let\olddefinition\definition
+\renewcommand{\definition}{\olddefinition\normalfont}
+\newtheorem{lemma}{Lemma}
+\let\oldlemma\lemma
+\renewcommand{\lemma}{\oldlemma\normalfont}
+\newtheorem{proposition}{Proposition}
+\let\oldproposition\proposition
+\renewcommand{\proposition}{\oldproposition\normalfont}
+\newtheorem{corollary}{Corollary}
+\let\oldcorollary\corollary
+\renewcommand{\corollary}{\oldcorollary\normalfont}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert} % \norm command 
+
+%%% PLOTTING PARAMETERS
+\pgfmathsetseed{1952} % for Brownian Motion plotting
+\newcommand{\Emmett}[5]{% points, advance, rand factor, options, end label
+\draw[#4] (0,0)
+\foreach \x in {1,...,#1}
+{   -- ++(#2,rand*#3)
+}
+node[right] {#5};
+}
+
+
+\pgfplotsset{every axis/.append style={},
+    cmhplot/.style={mark=none,line width=1pt,->},
+    soldot/.style={only marks,mark=*},
+    holdot/.style={fill=white,only marks,mark=*},
+}
+
+\tikzset{>=stealth}
+%%%
+
+%% set noindent by default and define indent to be the standard indent length
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+\title{Mathematical \& Computational Finance II\\Lecture Notes}
+\author{The Black-Scholes World}
+\date{October 13 2015 \\ Last update: \today{}}
+\maketitle
+
+% SECTION: 
+\section{The Minimal Hedge}
+
+\indent Last time we had that if $f_T$ (previously denoted $h_T$) is the payoff of a European contingent claim which may be exercised at time $T$ we need that
+\begin{align*}
+	f_T &\in \mathcal F_T \quad \text{(i.e. $f_T$ is measurable at time $T$)} \\
+	\mathbb E_{\mathbb P}[e^{-rT}f_T] &< \infty \quad \text{(i.e. the discounted payoff is integrable wrt $\mathbb P$)}
+\end{align*}
+
+Then we can say that the rational/no-arbitrage price is
+\begin{equation*}
+	C(T,f_T) = \mathbb E_{\mathbb Q}[e^{-rT}f_T]
+\end{equation*}
+
+where $\mathbb Q$ is our risk neutral measure. To construct $\mathbb Q$ we take $\Theta = \frac{\mu - r}{\sigma}$ (under the Black-Scholes model) and have $\mathbb Q$ be defined by, for $0 \leq t \leq T$,
+\begin{align*}
+	\Lambda_t &= e^{-\int^t_0\Theta_u\,dB_u - \frac{1}{2}\int^t_0\Theta^2_u\,du} \quad \text{and} \\
+	\mathbb Q(A) &= \int_A \Lambda\,d\mathbb P \quad \forall~A\in\mathcal F_T \quad \text{and} \\
+	W_t &= B_t + \int^t_0\Theta_u\,du
+\end{align*}
+
+and we have the result where $W_t$ is a Brownian motion on $(\Omega,\mathcal F,\mathbb Q)$. We also had found a minimal hedge/portfolio process $H^* = (H^0,H^1)$ given by
+\begin{align*}
+	H^1_t &= \frac{\gamma_t}{\sigma}\frac{e^{rt}}{S^1_t} \\
+	H^0_t &= N_t - e^{rt}S^1_tH^1_t
+\end{align*}
+
+where $N_t = \mathbb E_{\mathbb Q}[e^{-rt}f_T|\mathcal F_t]$ and $\gamma_t$ is known to exist by the Martingale Representation Theorem such that $N_t = N_0 + \int^t_0 \gamma_s\,dW_s$. We had determined that the value $C(T,f_T)$ is the amount of initial capital needed to replicate the option payoff using the portfolio process $H^*$.
+
+\section{Derivation of the Black-Scholes Price in the Risk Neutral Framework}
+
+On $(\Omega,\mathcal F,\mathbb P)$ (the real world space) we have
+\begin{align*}
+	dS^0_t &= rS^0_t\,dt \\
+	dS^1_t &= \mu S^0_t\,dt + \sigma S^1_t\,dB_t
+\end{align*}
+
+and on the risk neutral space $(\Omega,\mathcal F,\mathbb Q)$ we have
+\begin{align*}
+	dS^0_t &= rS^0\,dt \\
+	dS^1_t &= rS^1_t\,dt + \sigma S^1_t\,dW_t
+\end{align*}
+
+Using It\^{o}'s formula we can show that the solution to the SDE for $S^1_t$, in the risk neutral space, is
+\begin{equation*}
+	S^1_t = S^1_0 e^{(r-\frac{1}{2}\sigma^2)t + \sigma W_t}
+\end{equation*}
+
+\begin{theorem}{Risk Neutral Pricing Theorem} In the Black-Scholes model any option defined by a nonnegative $\mathcal F_T$-measurable random variable, say $f_T$ which is square integrable under $\mathbb Q$ (and thus $\mathbb P$), is replicable. The value at time $t \in [0,T]$ of any replicating portfolio is
+\begin{equation*}
+	V_t = \mathbb E_{\mathbb Q}[e^{-r(T-t)}f_T|\mathcal F_t]
+\end{equation*}
+
+\begin{proof} We could sketch this proof but we've basically already done it using the Martingale Representation Theorem, etc... The only modification is that now we have to deal with $(T - t)$ appearing.
+\end{proof}
+\end{theorem}
+
+If we assume $f_T = f(S_T)$ then we have
+\begin{equation*}
+	V_t = \mathbb E_{\mathbb Q}[e^{-r(T-t)}f(S_T) | \mathcal F_T]
+\end{equation*}
+
+Note that
+\begin{align*}
+	\frac{S^1_T}{S^1_t} &= \frac{S^1_0\exp{\big[(r - \frac{1}{2}\sigma^2)T - \sigma W_T}\big]}{{S^1_0\exp\big[(r - \frac{1}{2}\sigma^2)t - \sigma W_t)\big]}} \\
+	\iff S^1_T &= S^1_t e^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)} \\
+	&= \mathbb E_{\mathbb Q}\Big[ e^{-r(T - t)}f(S^1_te^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)}) \Big| \mathcal F_t\Big]
+\end{align*}
+
+Noting that $W_T - W_t$ is independent of our filtration and $S^1_t$ is $\mathcal F_t$ measurable.
+
+\begin{theorem}{``FACT''} On a probability space $(\Omega,\mathcal G,\mathbb P)$ let $X$ and $Y$ be random variables and $\mathcal A$ a sub-$\sigma$-algebra of $\mathcal G$. Suppose $X$ is $\mathcal A$-measurable and $Y$ is independent of $\mathcal A$, then for any bounded measurable function $f(X,Y)$ define some other function $\phi(X)$ as
+\begin{equation*}
+	\phi(X) = \mathbb E[f(x,Y)] \quad \forall~x\in\mathbb R
+\end{equation*}
+
+then we have
+\begin{equation*}
+	\mathbb E[f(x,Y)|\mathcal A] = \phi(X) =  \mathbb E[f(x,Y)]
+\end{equation*}
+
+Basically, this is telling us that if we take a point $x$ (since $X$ is $\mathcal A$ measurable we have that $x$ is known) and we can just compute the ordinary expectation as desired.
+
+\end{theorem}
+
+Moving on, with 
+\begin{equation*}
+	F(t,x) = \mathbb E_{\mathbb Q}[e^{-r(T - t)}f\big(x,^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)}\big)]
+\end{equation*}
+
+we have that 
+\begin{equation*}
+	V_t = F(t,S^1_t)
+\end{equation*}
+
+and $\sigma(W_T - W_t)$ is just normally distributed with mean 0 and variance $\sigma^2(T-t)$ so this is easily computable, and using the standard normal density we have
+\begin{equation*}
+	F(t,x) = e^{-r(T-t)}\int^\infty_{-\infty} f\big(xe^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma\sqrt{(T - t)}z}\big) \cdot \frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}z^2}\,dz
+\end{equation*}
+
+\indent From this we have successfully reduced the Black-Scholes option pricing problem to a relatively simple integration problem.
+
+\begin{lemma} For constant $k > 0$ we have that the conditional probability under the measure $\mathbb Q$ 
+\begin{equation*}
+	\mathbb E_{\mathbb Q}[\mathds 1_{S_T > k} | \mathcal F_t] = 
+	\Phi\Big[\frac{\log(\frac{S_t}{K}) + (T - t)(r - \frac{\sigma^2}{2})}
+		{\sigma\sqrt{T - t}}\Big]
+\end{equation*}
+
+where $\Phi(x)$ is the normal CDF and the conditional $\mathcal F_t$ means that we are given all the information available to about the system up to time $t$ (i.e. the price). We prove this using basic calculus \& some integration tricks:
+
+\begin{proof} Let
+\begin{equation*}
+	d_2 = \frac{\log(\frac{S_t}{K}) + (T - t)(r - \frac{\sigma^2}{2})}
+		{\sigma\sqrt{T - t}}
+\end{equation*}
+
+so that
+\begin{equation*}
+	V_0 = e^{-rt}\Phi[d_2]
+\end{equation*} \\
+
+Note that since $S_T \equiv S_te^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)}$ we have
+\begin{align*}
+	S_T > K \iff S_te^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)} > K \\
+	\implies \log(S_t) + (r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t) > \log(K) \\
+	\implies W_T - W_t > \frac{-\log(\frac{S_t}{K}) - (r - \frac{1}{2}\sigma^2)(T - t)}{\sigma}
+\end{align*}
+
+For brevity let $Y_t = \frac{\log(\frac{S_t}{K}) + (r - \frac{1}{2}\sigma^2)(T - t)}{\sigma}$ so that we have $W_T - W_t > -Y_t$, hence
+\begin{equation*}
+	\mathbb E_{\mathbb Q}[\mathds 1_{S_T > K}|\mathcal F_t] = \mathbb E_{\mathbb Q}[\mathds 1_{W_T - W_t > -Y_t} | \mathcal F_t]
+\end{equation*}
+
+\indent Since we have that $Y_t$ is $\mathcal F_t$-measurable and $(W_T - W_t)$ is independent of our filtration we may use our theorem above (``FACT'') so that
+\begin{align*}
+	\mathbb E_{\mathbb Q}[\mathds 1_{W_T - W_t > -Y_t} | \mathcal F_t] &= \mathbb E_{\mathbb Q}[\mathds 1_{W_T - W_t > -Y_t}] \\
+	&= \frac{1}{\sqrt{2\pi(T-t)}} \int^\infty_{-Y_t} e^{-\frac{1}{2(T - t)}z^2}\,dz \\
+	&= \frac{1}{\sqrt{2\pi(T-t)}} \int^{Y_t}_{-\infty} e^{-\frac{1}{2(T - t)}z^2}\,dz \\
+\end{align*}
+
+With the substitution
+\begin{equation*}
+	u(z) = \frac{z}{\sqrt{T - t}} \implies d[u(z)] = \frac{dz}{\sqrt{T - t}}
+\end{equation*}
+
+we have
+\begin{align*}
+	u(Y_t) &= \frac{\log(\frac{S_t}{K}) + (r - \frac{1}{2}\sigma^2)(T - t)}{\sigma\sqrt{T - t}} \equiv d_2\\
+	\implies \frac{1}{\sqrt{2\pi(T-t)}} \int^{Y_t}_{-\infty} e^{-\frac{1}{2(T - t)}z^2}\,dz &=
+	\frac{1}{\sqrt{2\pi(T-t)}} \int^{d_2}_{-\infty} e^{-\frac{1}{2(T - t)}[u\sqrt{T - t}]^2}\big[\sqrt{T - t}\,du\big] \\
+	&= 	\frac{1}{\sqrt{2\pi}} \int^{d_2}_{-\infty} e^{-\frac{1}{2}u^2}\,du \\
+	&= \Phi[d_2]
+\end{align*}
+
+as desired.
+\end{proof}
+\end{lemma}
+
+\subsection{The Binary Option}
+
+Consider the example of a binary option with payoff
+\begin{equation*}
+	h(S_T) =
+	\begin{cases}
+		1 & \text{if } S_T > K \\
+		0 & \text{else}
+	\end{cases}
+\end{equation*}
+
+\indent We say that this European-style contingent is a ``cash-or-nothing'' call option. We can find the correct price for this option using the lemma above. In this example we consider time $t = 0$,
+
+\begin{align*}
+	V_0 &= \mathbb E_{\mathbb Q}[e^{-rT}h(S_T)] \\
+		&= e^{-rT}\mathbb E_{\mathbb Q}[h(S_T)] \quad \text{(since $e^{-rt}$ is known)} \\
+		&= e^{-rT}\mathbb E_{\mathbb Q}[\mathds 1_{S_T > K}] \\
+		&= e^{-rT}\Phi[d_2]
+\end{align*}
+
+with $d_2$ to be defined as earlier.
+
+\subsection{The ``Asset-or-Nothing'' Option}
+
+Consider the example of an option with payoff 
+\begin{equation*}
+	h(S_T) = 
+	\begin{cases}
+		S_T & \text{if } S_T > K \\
+		0 & \text{else}
+	\end{cases}
+\end{equation*}
+
+\indent We call this the ``asset-or-nothing'' call option. By our risk neutral pricing formula we have that, at time $t = 0$,
+\begin{equation*}
+	V^{AON}_0 = \mathbb E_{\mathbb Q}[ e^{-rT}S_T\cdot \mathds 1_{S_T > K}]
+\end{equation*}
+
+\indent This is similar to the ``all-or-nothing'' option but we now have the included $S_T$ term. We proceed by recall our substitution for $S_T = S_te^{(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)}$ and evaluating at $t = 0$ to get
+\begin{align*}
+	V^{AON}_0 &= \mathbb E_{\mathbb Q}[e^{-rT}S_0e^{(r - \frac{1}{2}\sigma^2)(T - 0) + \sigma(W_T - W_0)}\cdot \mathds 1_{S_T > K}] \\
+	&= \mathbb E_{\mathbb Q}[S_0e^{\frac{1}{2}\sigma^2T + \sigma W_T} \cdot \mathds 1_{S_T > K}] \\
+\end{align*}
+
+Again recalling our lemma we have
+\begin{align*}
+	V^{AON}_0 &= \mathbb E_{\mathbb Q}[S_0e^{\frac{1}{2}\sigma^2T + \sigma W_T} \cdot \mathds 1_{W_T > -Y_0}] \\
+		&= \mathbb E_{\mathbb Q}[S_0e^{\frac{1}{2}\sigma^2T + \sigma W_T} \cdot \mathds 1_{-W_T < Y_0}] \quad \text{(by symmetry of $W_T\sim N(0, T)$)} \\
+		&= \mathbb E_{\mathbb Q}[S_0e^{\frac{1}{2}\sigma^2T - \sigma(-W_T)} \cdot \mathds 1_{-W_T < Y_0}] \quad \text{(to make all our $W_T$ terms the same sign)} \\
+		&= S_0e^{\frac{1}{2}\sigma^2T}\mathbb E_{\mathbb Q}[e^{-\sigma(-W_T)} \cdot \mathds 1_{-W_T < Y_0}] \quad \text{(taking out what is known)} \\
+		&= S_0e^{\frac{1}{2}\sigma^2T}\frac{1}{\sqrt{2\pi T}} \int^{Y_0}_{\infty} e^{-\sigma z} e^{-\frac{1}{2T}z^2}\,dz
+\end{align*}
+
+From here we use the substitution
+\begin{align*}
+	&u = \frac{z}{\sqrt{T}} \iff z = u\sqrt{T} \implies dz = \sqrt{T}\,du \\
+	\therefore~&u(Y_0) = d_2
+\end{align*}
+
+So we simplify our integral to
+\begin{align*}
+	V^{AON}_0 &= S_0e^{\frac{1}{2}\sigma^2T}\frac{1}{\sqrt{2\pi T}} \int^{Y_0}_{\infty} e^{-\sigma z} e^{-\frac{1}{2T}z^2}\,dz \\
+	&= S_0e^{\frac{1}{2}\sigma^2T}\frac{1}{\sqrt{2\pi T}} \int^{d_2}_{\infty} e^{-\sigma u\sqrt{T}} e^{-\frac{1}{2T}(u\sqrt{T})^2}\big[\sqrt{T}\,du\big] \\
+	&= S_0e^{\frac{1}{2}\sigma^2T}\frac{1}{\sqrt{2\pi}} \int^{d_2}_{\infty} e^{-\sigma u\sqrt{T}} e^{-\frac{1}{2}u^2}\,du \\
+	&= S_0\frac{1}{\sqrt{2\pi}} \int^{d_2}_{\infty} e^{-\frac{1}{2}u^2 - \sigma u \sqrt{T} - \frac{1}{2}\sigma^2T}\,du
+\end{align*}
+
+We realize that our integrand is a perfect square (or complete the square to see this),
+\begin{align*}
+	-\frac{1}{2}u^2 - \sigma\sqrt{T}u  - \frac{1}{2}\sigma^2T &= -\frac{1}{2}\big(u^2 + 2\sigma\sqrt{T}u + \sigma^2T \big) \\
+	&= -\frac{1}{2}\big(u + \sigma\sqrt{T})^2
+\end{align*}
+
+So our integral becomes
+\begin{equation*}
+	V^{AON}_0 = S_0 e^{-rT}\frac{1}{\sqrt{2\pi}}\int^{d_2}_{\infty} e^{-\frac{1}{2}(u + \sigma\sqrt{T})^2}\,du
+\end{equation*}
+
+Substituting again
+\begin{align*}
+	&v = u + \sigma\sqrt{T} \implies dv = du \\
+	\therefore~&v(d_2) = d_2 + \sigma\sqrt{T} 
+\end{align*}
+
+Letting $d_1 = d_2 + \sigma\sqrt{T}$ we have
+\begin{align*}
+	V^{AON}_0 &= S_0\int^{d_2}_{\infty} e^{-\frac{1}{2}(u + \sigma\sqrt{T})^2}\,du \\
+	&= S_0\int^{d_1}_{\infty} e^{-\frac{1}{2}v^2}\,dv \\
+	&= S_0\Phi[d_1]
+\end{align*}
+
+Therefore we conclude that the correct price at time $t = 0$ for a European-style ``asset-or-nothing'' call option is
+\begin{equation*}
+	V^{AON}_O = S_0\Phi[d_1]
+\end{equation*}
+
+with $d_1$ defined as above.
+
+\section{The European Call Option}
+
+We claim that the Black-Scholes time $t = 0$ price of a European call option with payoff
+\begin{equation*}
+	h(S_T) = (S_T - K)^+
+\end{equation*}
+
+is
+\begin{equation*}
+	C_0 = S_0\Phi[d_1] - Ke^{-rT}\Phi[d_2]
+\end{equation*}
+
+\indent That is, we claim that the correct price is identical to a portfolio of 1 long ``asset-or-nothing'' call options and and K short ``cash-or-nothing'' call options. Where
+\begin{align*}
+	d_1 &= \frac{\log(\frac{S_0}{K}) + (r + \frac{1}{2}\sigma^2)T}{\sigma\sqrt{T}} \\
+	d_2 &= d_1 - \sigma\sqrt{T} = \frac{\log(\frac{S_0}{K}) + (r - \frac{1}{2}\sigma^2)T}{\sigma\sqrt{T}}
+\end{align*}
+
+\begin{proof} By the risk neutral pricing argument we have that
+\begin{align*}
+	C_0 &= \mathbb E_{\mathbb Q}[e^{-rT}(S_T - K)^+] \\
+		&= \mathbb E_{\mathbb Q}[e^{-rT}(S_T - K) \mathds 1_{S_T > K}] \\
+		&= \mathbb E_{\mathbb Q}[e^{-rT} S_T \mathds 1_{S_T > K}] - \mathbb E_{\mathbb Q}[e^{-rT} K \mathds 1_{S_T > K}] \\
+		&= \mathbb E_{\mathbb Q}[e^{-rT} S_T \mathds 1_{S_T > K}] - K\mathbb E_{\mathbb Q}[e^{-rT} \mathds 1_{S_T > K}] \\
+		&= S_0\Phi[d_1] - Ke^{-rT}\Phi[d_2]
+\end{align*}
+\end{proof}
+
+In generality if we're at time $t$, for $0 \leq t < T$, we have
+\begin{equation*}
+	C_t = S_t\Phi[d_1(t)] - Ke^{-r(T - t)}\Phi[d_2(t)]
+\end{equation*}
+
+where
+\begin{align*}
+	d_1(t) &= \frac{\log(\frac{S_t}{K}) + (r + \frac{1}{2}\sigma^2)(T - t)}{\sigma\sqrt{T - t}} \\
+	d_2(t) &= d_1(t) - \sigma\sqrt{T - t} = \frac{\log(\frac{S_t}{K}) + (r - \frac{1}{2}\sigma^2)(T - t)}{\sigma\sqrt{T - t}}
+\end{align*}
+
+\subsection{The European Put Option}
+
+\indent We could go through these steps again to derive a price for a European-style put option, but if we already have the price of a call option then its instead quicker to do so using put-call parity:
+\begin{equation*}
+	C - P = S_t - e^{-r(T - t)}K
+\end{equation*}
+
+So,
+\begin{align*}
+	P_t &= e^{-r(T - t)}K - S_t + \Big(S_t\Phi[d_1(t)] - Ke^{-r(T - t)}\Phi[d_2(t)]\Big) \\
+		&= Ke^{-r(T - t)}\big(1 - \Phi[d_2(t)]\big) - S_t\big(1 - \Phi[d_1(t)]\big)
+\end{align*}
+
+By symmetry of the normal distribution, $1 - \Phi(x) = \Phi(-x)$, we have
+\begin{equation*}
+	P_t = Ke^{-r(T - t)}\Phi[-d_2(t)] - S_t\Phi[-d_1(t)]
+\end{equation*}
+
+To have done this rigorously we would need to prove put-call parity, but we'll call it sufficient for now.
+
+\section{Hedging}
+
+\indent When we were constructing the hedging process $H^* = (H^0, H^1)$ we figured out the ratios for each component
+\begin{align*}
+	H^1_t &= \frac{\gamma_te^{rt}}{\sigma S^1_t} \\
+	H^0_t &= N_t - \frac{\gamma_t}{\sigma}
+\end{align*}
+
+but were left without the $\gamma_t$ guaranteed to exist by the Martingale Representation theorem. If we're actually going to do anything with this process we'll need to make this $\gamma_t$ component explicit. Fortunately we have that
+\begin{equation*}
+	V_t = \mathbb E_{\mathbb Q}\Big[e^{-r(T - t)}f(S^1_t\cdot\exp{\big[(r - \frac{1}{2}\sigma^2)(T - t) + \sigma(W_T - W_t)\big]} \Big| \mathcal F_t \Big]
+\end{equation*}
+
+By our ``FACT'' we know this is just a function of the asset price and time 
+\begin{equation*}
+	V_t = e^{-r(T - t)}F(T - t, S^1_t)
+\end{equation*}
+
+We can prove (it's not easy) that in this model $F$ is differentiable with respect to both $t$ and $x$, so, we may write
+\begin{equation*}
+	G(t,x) = F(T - t, e^{rt}x)
+\end{equation*}
+
+then we have
+\begin{align*}
+	V_te^{-rt} &= e^{-rT}G(t, e^{-rt}S^1_t) \\
+	\overline{V}_t &= e^{-rT}G(t, \overline{S}^1_t)
+\end{align*}
+
+Applying It\^{o}'s formula gives us
+\begin{equation*}
+	\overline{V}_t = e^{-rT}\Bigg[G(0, \overline{S}^1_0) + \int^t_0 \frac{\partial}{\partial u} G(u, \overline{S}^1_u)\,du + \int^t_0 \frac{\partial}{\partial x} G(u, \overline{S}^1_u)\,d\overline{S}^1_u + \frac{1}{2}\int^t_0 \frac{\partial^2}{\partial x^2} G(u, \overline{S}^1_u)\,d\langle \overline{S}^1_{(\cdot)} \rangle_u \Bigg]
+\end{equation*}
+
+\indent Under the probability measure $\mathbb Q$ we know that $\overline{S}^1$ and $\overline{V}$ are martingales thus no drift term should appear in their SDEs. Therefore, since we know that
+\begin{align*}
+	d\overline{S}^1_t = \overline{S}^1_t\sigma\,dW_t \quad \text{(notice no drift in $dt$)} \\
+	d\langle \overline{S}^1_{(\cdot)} \rangle_t = \big(\overline{S}^1_t\sigma\big)^2\,dt
+\end{align*}
+
+we must have that
+\begin{align*}
+	\overline{V}_t &= e^{-rT}\Bigg[G(0, \overline{S}^1_0) + \int^t_0 \frac{\partial}{\partial u} G(u, \overline{S}^1_u)\,du + \int^t_0 \frac{\partial}{\partial x} G(u, \overline{S}^1_u)\,d\overline{S}^1_u + \frac{1}{2}\int^t_0 \frac{\partial^2}{\partial x^2} G(u, \overline{S}^1_u)\,d\langle \overline{S}^1_{(\cdot)} \rangle_u \Bigg] \\
+	&= e^{-rT}\Bigg[G(0, \overline{S}^1_0) + \int^t_0 \frac{\partial}{\partial u} G(u, \overline{S}^1_u)\,du + \int^t_0 \frac{\partial}{\partial x} G(u, \overline{S}^1_u)\overline{S}^1_u\sigma\,dW_u + \frac{1}{2}\int^t_0 \frac{\partial^2}{\partial x^2} G(u, \overline{S}^1_u)\big(\overline{S}^1_u\sigma\big)^2\,du \Bigg] \\
+	&= e^{-rT}\Bigg[G(0, \overline{S}^1_0) + \int^t_0 \Bigg(\frac{\partial}{\partial u} G(u, \overline{S}^1_u) + \frac{1}{2}\frac{\partial^2}{\partial x^2} G(u, \overline{S}^1_u)(\overline{S}^1_u)^2\sigma^2\Bigg)\,du + \int^t_0 \frac{\partial}{\partial x} G(u, \overline{S}^1_u)\overline{S}^1_u\sigma\,dW_u\Bigg] \\
+\end{align*}
+
+has as its drift term $du$ be  equal to zero. That is, we must satisfy
+\begin{equation*}
+	\frac{\partial}{\partial u} G(u, \overline{S}^1_u) + \frac{1}{2}\frac{\partial^2}{\partial x^2} G(u, \overline{S}^1_u)(\overline{S}^1_u)^2\sigma^2 = 0
+\end{equation*}
+
+Using 
+\begin{align*}
+	G(T,x) &= F(0, e^{rT}x) = f(e^{rT},x) \\
+	G(t,x) &= F(T - t, e^{rt}x)
+\end{align*}
+
+we apply the chain rule for partial derivatives on our equation above to obtain the partial differential equation
+\begin{equation*}
+	\frac{\partial F}{\partial u}(u, S^1_u) + rS^1_t\frac{\partial F}{\partial x}(u, S^1_u) + \frac{1}{2}\sigma^2(S^1_t)^2\frac{\partial^2 F}{\partial x^2}F(u, S^1_u) = 0
+\end{equation*}
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}
