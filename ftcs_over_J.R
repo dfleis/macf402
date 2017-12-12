@@ -17,9 +17,9 @@ xL <- 0
 xR <- pi
 T <- 3
 
-N <- 200
-Jmin <- 15
-Jmax <- 25
+N <- 100
+Jmin <- 10
+Jmax <- 30
 Js <- Jmin:Jmax
 errvec_J <- vector(mode = 'numeric', length = Jmax - Jmin + 1)
 
